@@ -21,7 +21,7 @@ const LinkButton = ({
 }: LinkButtonProps) => {
   const baseStyles =
     variant === 'ghost'
-      ? 'rounded font-medium transition-colors text-sm'
+      ? 'p-0 rounded font-medium transition-colors text-sm'
       : 'px-4 py-2 rounded font-semibold transition-colors text-sm';
   const variantStyles = {
     primary: 'bg-blue-500 text-white hover:bg-blue-600',
@@ -32,7 +32,7 @@ const LinkButton = ({
   return (
     <Link
       href={href}
-      className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      className={`inline-flex ${baseStyles} ${variantStyles[variant]} ${className}`}
     >
       {children || text}
     </Link>

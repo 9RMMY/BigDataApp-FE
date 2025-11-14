@@ -1,15 +1,16 @@
-'use client'
+"use client";
 
-import { ReactNode } from 'react'
-import Button from './buttons/Button'
+import { ReactNode } from "react";
+import Button from "./buttons/Button";
 
 interface CardProps {
-  title?: string
-  description?: string
-  buttonText?: string
-  onButtonClick?: () => void
-  children?: ReactNode
-  className?: string
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  onButtonClick?: () => void;
+  children?: ReactNode;
+  className?: string;
+  noPadding?: boolean;
 }
 
 export default function Card({
@@ -18,7 +19,8 @@ export default function Card({
   buttonText,
   onButtonClick,
   children,
-  className = '',
+  className = "",
+  noPadding = false,     // ⭐ props에서 꺼내야 함!
 }: CardProps) {
   const content = children ?? (
     <>
@@ -28,13 +30,15 @@ export default function Card({
         <Button text={buttonText} onClick={onButtonClick} />
       )}
     </>
-  )
+  );
 
   return (
     <div
-      className={`border rounded-2xl bg-white p-6 hover:shadow-md transition-shadow ${className}`}
+      className={`rounded-2xl bg-white ${
+        noPadding ? "p-0" : "p-4"
+      } hover:shadow-md transition-shadow ${className}`}
     >
       {content}
     </div>
-  )
+  );
 }
