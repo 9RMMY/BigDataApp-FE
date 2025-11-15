@@ -1,3 +1,5 @@
+"use client";
+
 import TransferCalculator from "./TransferCalculator";
 
 export default function TransferPage() {

@@ -33,23 +33,23 @@ export default function TradeSimulator() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 flex-col md:flex-row">
-      
+    <div className="flex min-h-screen bg-white flex-col md:flex-row">
+
       {/* Left Sidebar */}
-      <div className="w-full md:w-60 bg-white border-r shadow-sm p-6 flex md:flex-col items-center md:items-start">
+      <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start mr-4">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
           TRADE<br />SIMULATOR
         </h1>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-5 sm:p-8 md:p-10 mt-2">
+      <div className="flex-1 p-5 sm:p-8 md:p-10 mt-2 bg-white">
 
         {/* Dropdown + Trade Button */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-12">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-8 mb-12">
 
           {/* Left 2 dropdowns */}
-          <div className="flex gap-3 w-full sm:w-auto justify-center">
+          <div className="flex gap-3 justify-start w-full sm:w-auto">
             <select
               className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
               value={leftTeam1}
@@ -85,7 +85,7 @@ export default function TradeSimulator() {
           </button>
 
           {/* Right 2 dropdowns */}
-          <div className="flex gap-3 w-full sm:w-auto justify-center">
+          <div className="flex gap-3 justify-start w-full sm:w-auto">
             <select
               className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
               value={rightTeam1}
@@ -110,7 +110,7 @@ export default function TradeSimulator() {
 
         {/* 안내 문구 */}
         {!loading && !result && (
-          <div className="text-center text-gray-500 mb-10 text-base sm:text-lg">
+          <div className="text-left text-gray-500 mb-10 text-base sm:text-lg">
             트레이드 조건을 모두 선택한 뒤 Trade 버튼을 눌러보세요!
           </div>
         )}
@@ -124,8 +124,8 @@ export default function TradeSimulator() {
 
         {/* 결과 박스 */}
         {result && (
-          <div className="flex justify-center mt-10">
-            <div className="bg-white shadow-lg rounded-xl p-6 sm:p-8 w-full max-w-lg text-center border">
+          <div className="flex justify-center mt-6 w-full">
+            <div className="bg-white shadow-lg rounded-xl p-6 w-full text-left border">
               <h2 className="text-xl sm:text-2xl font-bold mb-2">
                 {result.ok ? "🎉 트레이드 성공!" : "❌ 트레이드 실패"}
               </h2>
