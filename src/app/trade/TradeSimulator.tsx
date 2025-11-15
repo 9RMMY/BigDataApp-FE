@@ -125,7 +125,7 @@ export default function TradeSimulator() {
         {/* 결과 박스 */}
         {result && (
           <div className="flex justify-center mt-6 w-full">
-            <div className="bg-white shadow-lg rounded-xl p-6 w-full text-left border">
+            <div className="bg-white shadow-lg rounded-xl p-6 w-full text- border">
               <h2 className="text-xl sm:text-2xl font-bold mb-2">
                 {result.ok ? "🎉 트레이드 성공!" : "❌ 트레이드 실패"}
               </h2>
