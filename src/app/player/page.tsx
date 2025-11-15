@@ -1,4 +1,4 @@
-export default function Tutorial() {
+export default function Player() {
   return (
     <div className="page-container">
       

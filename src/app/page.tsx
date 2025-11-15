@@ -7,13 +7,13 @@ import GNB from "./components/GNB";
 import LinkButton from "./components/buttons/LinkButton";
 
 const featureItems = [
-  "선수분석",
-  "MVP & 베스트11",
-  "트레이드",
-  "영입방출",
-  "라인업",
-  "전략제안",
-  "설명",
+  { label: "선수분석", path: "/player" },
+  { label: "MVP & 베스트11", path: "/mvp" },
+  { label: "트레이드", path: "/trade" },
+  { label: "영입방출", path: "/transfer" },
+  { label: "라인업", path: "/lineup" },
+  { label: "전략제안", path: "/strategy" },
+  { label: "설명", path: "/tutorial" },
 ];
 
 const matchResults = [
@@ -78,7 +78,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <GNB />
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-10">
         {/* 메인 대시보드 */}
         {/* TODO: 그래프 연결 */}
@@ -100,10 +99,10 @@ export default function Home() {
         {/* TODO: 일부 페이지 연결 */}
         <section>
           <div className="flex justify-center items-center overflow-x-auto bg-white gap-10 py-2">
-            {featureItems.map((label) => (
+            {featureItems.map(({ label, path }) => (
               <LinkButton
                 key={label}
-                href={`/menu/${encodeURIComponent(label)}`}
+                href={path}
                 variant="ghost"
                 className="p-0"
               >
