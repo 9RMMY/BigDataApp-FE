@@ -17,87 +17,64 @@ const featureItems = [
 ];
 
 const matchResults = [
-  {
-    id: 1,
-    date: "11월 8일 토요일 1",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 2,
-    date: "11월 8일 토요일 2",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 3,
-    date: "11월 8일 토요일 3",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 4,
-    date: "11월 8일 토요일 4",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 5,
-    date: "11월 8일 토요일 5",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
+  { id: 1, date: "11월 8일 토요일 1", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 2, date: "11월 8일 토요일 2", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 3, date: "11월 8일 토요일 3", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 4, date: "11월 8일 토요일 4", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 5, date: "11월 8일 토요일 5", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 6, date: "11월 8일 토요일 6", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 7, date: "11월 8일 토요일 7", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 8, date: "11월 8일 토요일 8", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 9, date: "11월 8일 토요일 9", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 10, date: "11월 8일 토요일 10", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 11, date: "11월 8일 토요일 11", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 12, date: "11월 8일 토요일 12", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
+  { id: 13, date: "11월 8일 토요일 13", stadium: "제주 월드컵경기장 14:00", home: "제주", away: "안양", score: "1 - 2" },
 ];
 
+
 export default function Home() {
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(3);
 
-  // 화면 크기에 따라 itemsPerPage 계산
+  // 화면 크기 감지해서 itemsPerPage 조정
   useEffect(() => {
-    const updateItemsPerPage = () => {
-      const width = window.innerWidth;
-      let newItemsPerPage = 2;
-      if (width >= 1024) newItemsPerPage = 6;
-      else if (width >= 640) newItemsPerPage = 4;
-
-      setItemsPerPage(newItemsPerPage);
-
-      // currentIndex 보정
-      setCurrentIndex((prev) =>
-        Math.min(prev, Math.max(0, matchResults.length - newItemsPerPage))
-      );
+    const updateItems = () => {
+      const w = window.innerWidth;
+      if (w >= 1024) setItemsPerPage(6);      // lg
+      else if (w >= 768) setItemsPerPage(4);  // md
+      else setItemsPerPage(2);               // sm
     };
 
-    updateItemsPerPage();
-    window.addEventListener("resize", updateItemsPerPage);
-    return () => window.removeEventListener("resize", updateItemsPerPage);
+    updateItems();
+    window.addEventListener("resize", updateItems);
+    return () => window.removeEventListener("resize", updateItems);
   }, []);
 
-  const handlePrev = () => {
-    setCurrentIndex((prev) => Math.max(prev - itemsPerPage, 0));
-  };
+  // itemsPerPage가 바뀌면 index 보정
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [itemsPerPage]);
 
-  const handleNext = () => {
-    setCurrentIndex((prev) =>
-      Math.min(prev + itemsPerPage, matchResults.length - itemsPerPage)
-    );
-  };
-
+  const maxIndex = Math.max(0, matchResults.length - itemsPerPage);
+  
   const visibleMatches = matchResults.slice(
     currentIndex,
     currentIndex + itemsPerPage
   );
+
+  const handleNext = () => {
+    if (currentIndex + itemsPerPage < matchResults.length) {
+      setCurrentIndex(currentIndex + itemsPerPage);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex - itemsPerPage >= 0) {
+      setCurrentIndex(currentIndex - itemsPerPage);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -150,6 +127,7 @@ export default function Home() {
           {/* 경기 결과 header */}
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">최근 경기 결과</h2>
+            
             <div className="flex gap-4">
               <button
                 aria-label="이전 경기"
@@ -162,7 +140,7 @@ export default function Home() {
               <button
                 aria-label="다음 경기"
                 onClick={handleNext}
-                disabled={currentIndex + itemsPerPage >= matchResults.length} // 마지막 페이지에서 비활성
+                disabled={currentIndex === maxIndex} // 마지막 페이지에서 비활성
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-white text-lg text-gray-600 hover:border-gray-400 hover:text-gray-800"
               >
                 ›
@@ -171,7 +149,7 @@ export default function Home() {
           </div>
 
           {/* 경기 결과 detail */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {visibleMatches.map((match) => (
               <Card
                 key={match.id}
