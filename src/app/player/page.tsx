@@ -97,60 +97,57 @@ export default function PlayerPage() {
       <main className="container mx-auto p-4">
         {/* Filter Section */}
         <section className="mb-0">
-<div className="flex flex-wrap gap-4 justify-end">
+          <div className="flex flex-wrap gap-4 justify-end">
+            {/* 포지션 필터 */}
+            <div className="w-auto">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                포지션 필터
+              </label>
+              <select
+                className="p-2 border rounded-md"
+                value={selectedPosition}
+                onChange={(e) => setSelectedPosition(e.target.value)}
+              >
+                <option value="">전체 포지션</option>
+                <option value="공격수">공격수</option>
+                <option value="미드필더">미드필더</option>
+                <option value="수비수">수비수</option>
+                <option value="골키퍼">골키퍼</option>
+              </select>
+            </div>
 
-  {/* 포지션 필터 */}
-  <div className="w-auto">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      포지션 필터
-    </label>
-    <select
-      className="p-2 border rounded-md"
-      value={selectedPosition}
-      onChange={(e) => setSelectedPosition(e.target.value)}
-    >
-      <option value="">전체 포지션</option>
-      <option value="공격수">공격수</option>
-      <option value="미드필더">미드필더</option>
-      <option value="수비수">수비수</option>
-      <option value="골키퍼">골키퍼</option>
-    </select>
-  </div>
+            {/* 성장률 */}
+            <div className="w-auto">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                성장률 지표
+              </label>
+              <select className="p-2 border rounded-md">
+                <option>전체 기간</option>
+                <option>최근 6개월</option>
+                <option>최근 1년</option>
+                <option>최근 2년</option>
+              </select>
+            </div>
 
-  {/* 성장률 */}
-  <div className="w-auto">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      성장률 지표
-    </label>
-    <select className="p-2 border rounded-md">
-      <option>전체 기간</option>
-      <option>최근 6개월</option>
-      <option>최근 1년</option>
-      <option>최근 2년</option>
-    </select>
-  </div>
-
-  {/* 검색 */}
-  <div className="w-auto">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      선수 검색
-    </label>
-    <div className="relative">
-      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-        🔍
-      </span>
-      <input
-        type="text"
-        placeholder="선수 이름을 검색하세요"
-        className="w-40 sm:w-48 md:w-56 p-2 pl-10 border rounded-md"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
-    </div>
-  </div>
-
-</div>
-
+            {/* 검색 */}
+            <div className="w-auto">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                선수 검색
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  placeholder="선수 이름을 검색하세요"
+                  className="w-40 sm:w-48 md:w-56 p-2 pl-10 border rounded-md"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* 선수 목록 */}
