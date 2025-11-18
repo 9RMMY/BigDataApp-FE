@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function StrategyPage() {
   const [opponent, setOpponent] = useState("");
@@ -14,7 +14,24 @@ export default function StrategyPage() {
     strategy_impacts: { strategy: string; delta_expected_points: number; note: string }[];
   } | null>(null);
 
+  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+
   const isReady = opponent && date;
+
+  // 팀 목록 로드 (상대팀 선택용)
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch("/api/meta/teams");
+        if (!res.ok) return;
+        const data = await res.json();
+        setTeams(data);
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchTeams();
+  }, []);
 
   const handleExecute = async () => {
     if (!isReady) return;
@@ -22,28 +39,29 @@ export default function StrategyPage() {
     setLoading(true);
     setResult(null);
 
-    // --- API 연동 예정 ---
-    // const res = await fetch("/api/strategy", { method: "POST", body: JSON.stringify({ opponent, date }) });
-    // const data = await res.json();
-    // setResult(data);
-
-    // 하드코딩 예제
-    setTimeout(() => {
-      setResult({
-        expected_points: 1.8,
-        win_prob: 0.6,
-        draw_prob: 0.25,
-        loss_prob: 0.15,
-        strategy_impacts: [
-          {
-            strategy: "attack_focus",
-            delta_expected_points: 0.4,
-            note: "공격 강화 시 득점 기대치 +0.3",
-          },
-        ],
+    try {
+      const res = await fetch("/api/simulations/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          match_id: "match-1", // TODO: 실제 경기 ID로 교체 가능
+          home_team_id: "home-team", // 필요 시 수정
+          away_team_id: opponent,
+          strategy: "attack_focus",
+        }),
       });
-      setLoading(false);
-    }, 1500);
+
+      if (!res.ok) {
+        throw new Error("API Error");
+      }
+
+      const data = await res.json();
+      setResult(data);
+    } catch (e) {
+      setResult(null);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -57,28 +75,31 @@ export default function StrategyPage() {
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 p-5 sm:p-8 md:p-10 bg-white flex flex-col">
+      <div className="flex-1 p-6 bg-white flex flex-col">
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
           <select
-            className="border p-2 rounded w-40"
+            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
             value={opponent}
             onChange={(e) => setOpponent(e.target.value)}
           >
             <option value="">상대팀 선택</option>
-            <option value="팀 A">팀 A</option>
-            <option value="팀 B">팀 B</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
           </select>
 
           <input
             type="date"
-            className="border p-2 rounded w-40"
+            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
 
           <button
-            className={`px-4 py-2 rounded text-white text-sm sm:text-base transition w-full sm:w-auto ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-full sm:w-auto ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
               }`}
             onClick={handleExecute}
             disabled={!isReady}
@@ -89,33 +110,33 @@ export default function StrategyPage() {
 
         {/* 안내 문구 */}
         {!loading && !result && (
-          <div className="text-left text-gray-500 mb-10 text-base sm:text-lg">
+          <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
             상대팀과 일정을 선택한 뒤 실행 버튼을 눌러주세요.
           </div>
         )}
 
         {/* 로딩 */}
         {loading && (
-          <div className="flex justify-center my-10">
-            <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full"></div>
+          <div className="flex justify-center my-3">
+            <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-blue-600 rounded-full"></div>
           </div>
         )}
 
         {/* 결과 */}
         {result && (
-          <div className="flex justify-center mt-6 w-full">
-            <div className="bg-white rounded-xl p-6 w-full text-left border">
-              <p className="text-lg font-bold mb-2">예상 경기 결과</p>
-              <p>예상 득점: {result.expected_points}</p>
-              <p>승리 확률: {(result.win_prob * 100).toFixed(0)}%</p>
-              <p>무승부 확률: {(result.draw_prob * 100).toFixed(0)}%</p>
-              <p>패배 확률: {(result.loss_prob * 100).toFixed(0)}%</p>
+          <div className="flex justify-center mt-2 w-full">
+            <div className="bg-white rounded-xl p-4 w-full text-left border">
+              <p className="text-sm sm:text-base font-bold mb-2">예상 경기 결과</p>
+              <p className="text-xs sm:text-sm">예상 득점: {result.expected_points}</p>
+              <p className="text-xs sm:text-sm">승리 확률: {(result.win_prob * 100).toFixed(0)}%</p>
+              <p className="text-xs sm:text-sm">무승부 확률: {(result.draw_prob * 100).toFixed(0)}%</p>
+              <p className="text-xs sm:text-sm">패배 확률: {(result.loss_prob * 100).toFixed(0)}%</p>
 
-              <div className="mt-4">
-                <p className="font-semibold">전략 영향:</p>
+              <div className="mt-3">
+                <p className="font-semibold text-xs sm:text-sm">전략 영향:</p>
                 {result.strategy_impacts.map((s, idx) => (
                   <div key={idx} className="ml-2">
-                    <p>
+                    <p className="text-xs sm:text-sm">
                       {s.strategy}: Δ득점 {s.delta_expected_points} ({s.note})
                     </p>
                   </div>
