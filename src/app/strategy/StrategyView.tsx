@@ -59,7 +59,7 @@ export default function StrategyPage() {
       {/* Right Content */}
       <div className="flex-1 p-5 sm:p-8 md:p-10 bg-white flex flex-col">
         {/* Controls */}
-        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-8 mb-12">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
           <select
             className="border p-2 rounded w-40"
             value={opponent}

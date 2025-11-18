@@ -62,31 +62,29 @@ export default function TradeSimulator() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-5 sm:p-8 md:p-10 flex flex-col overflow-y-auto">
+      <div className="flex-1 p-5 sm:p-8 md:p-10 flex flex-col">
 
         {/* Dropdown + Trade Button */}
-        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-8 mb-8">
-          <div className="flex gap-3 justify-start w-full sm:w-auto">
-            <select
-              className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
-              value={leftTeam1}
-              onChange={(e) => setLeftTeam1(e.target.value)}
-            >
-              <option value="">Select</option>
-              <option value="ulsan">울산</option>
-              <option value="pohang">포항</option>
-            </select>
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+          <select
+            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            value={leftTeam1}
+            onChange={(e) => setLeftTeam1(e.target.value)}
+          >
+            <option value="">Select</option>
+            <option value="ulsan">울산</option>
+            <option value="pohang">포항</option>
+          </select>
 
-            <select
-              className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
-              value={leftTeam2}
-              onChange={(e) => setLeftTeam2(e.target.value)}
-            >
-              <option value="">Select</option>
-              <option value="p1">선수1</option>
-              <option value="p2">선수2</option>
-            </select>
-          </div>
+          <select
+            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            value={leftTeam2}
+            onChange={(e) => setLeftTeam2(e.target.value)}
+          >
+            <option value="">Select</option>
+            <option value="p1">선수1</option>
+            <option value="p2">선수2</option>
+          </select>
 
           <button
             className={`px-4 py-2 rounded text-white text-sm sm:text-base transition w-[130px] sm:w-auto ${
@@ -100,27 +98,25 @@ export default function TradeSimulator() {
             Trade
           </button>
 
-          <div className="flex gap-3 justify-start w-full sm:w-auto">
-            <select
-              className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
-              value={rightTeam1}
-              onChange={(e) => setRightTeam1(e.target.value)}
-            >
-              <option value="">Select</option>
-              <option value="ulsan">울산</option>
-              <option value="pohang">포항</option>
-            </select>
+          <select
+            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            value={rightTeam1}
+            onChange={(e) => setRightTeam1(e.target.value)}
+          >
+            <option value="">Select</option>
+            <option value="ulsan">울산</option>
+            <option value="pohang">포항</option>
+          </select>
 
-            <select
-              className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
-              value={rightTeam2}
-              onChange={(e) => setRightTeam2(e.target.value)}
-            >
-              <option value="">Select</option>
-              <option value="p1">선수1</option>
-              <option value="p2">선수2</option>
-            </select>
-          </div>
+          <select
+            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            value={rightTeam2}
+            onChange={(e) => setRightTeam2(e.target.value)}
+          >
+            <option value="">Select</option>
+            <option value="p1">선수1</option>
+            <option value="p2">선수2</option>
+          </select>
         </div>
 
         {/* 안내 문구 */}
