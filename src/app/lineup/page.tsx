@@ -4,7 +4,7 @@ import LineupBoard from "./LineupBoard";
 
 export default function LineupPage() {
   return (
-    <div className="min-h-screen p-6">
+    <div className="flex flex-col bg-gray-100" style={{ height: 'calc(100vh - 7rem)' }}>
       <LineupBoard />
     </div>
   );

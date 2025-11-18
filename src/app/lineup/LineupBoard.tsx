@@ -47,92 +47,148 @@ export default function LineupBoard() {
   };
 
   return (
-    <div>
-      {/* Header */}
-      <h1 className="text-center font-bold text-2xl mb-6">LINE-UP</h1>
+    <div className="flex flex-col md:flex-row flex-1 bg-white">
 
-      {/* Controls: 중앙 정렬, 적당한 간격 */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-6">
-        <select
-          className="border p-2 rounded w-36"
-          value={formation}
-          onChange={(e) => setFormation(e.target.value)}
-        >
-          <option value="">전술 선택</option>
-          <option value="4-3-3">4-3-3</option>
-          <option value="3-5-2">3-5-2</option>
-          <option value="4-4-2">4-4-2</option>
-        </select>
-
-        <select
-          className="border p-2 rounded w-36"
-          value={opponent}
-          onChange={(e) => setOpponent(e.target.value)}
-        >
-          <option value="">상대팀 선택</option>
-          <option value="팀 A">팀 A</option>
-          <option value="팀 B">팀 B</option>
-        </select>
-
-        <button
-          className={`px-4 py-2 rounded text-white ${
-            isReady
-              ? "bg-primary hover:bg-primary/80"
-              : "bg-gray-400 cursor-not-allowed"
-          }`}
-          onClick={handleRecommend}
-          disabled={!isReady}
-        >
-          라인업 추천
-        </button>
+      {/* Left Sidebar - Lineup Options */}
+      <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start flex-shrink-0">
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
+          LINE-UP<br />BOARD
+        </h1>
       </div>
 
-      {/* 로딩 */}
-      {loading && (
-        <div className="flex justify-center my-6">
-          <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-green-600 rounded-full"></div>
+      {/* Right Content */}
+      <div className="flex-1 p-3 sm:p-8 md:p-10 flex flex-col">
+
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-2">
+          <select
+            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            value={formation}
+            onChange={(e) => setFormation(e.target.value)}
+          >
+            <option value="">전술 선택</option>
+            <option value="4-3-3">4-3-3</option>
+            <option value="3-5-2">3-5-2</option>
+            <option value="4-4-2">4-4-2</option>
+          </select>
+
+          <select
+            className="border p-1.5 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            value={opponent}
+            onChange={(e) => setOpponent(e.target.value)}
+          >
+            <option value="">상대팀 선택</option>
+            <option value="팀 A">팀 A</option>
+            <option value="팀 B">팀 B</option>
+          </select>
+
+          <button
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${
+              isReady
+                ? "bg-primary hover:bg-primary/80"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+            onClick={handleRecommend}
+            disabled={!isReady}
+          >
+            라인업 추천
+          </button>
         </div>
-      )}
 
-      {/* 적합도 */}
-      {fitScore !== null && !loading && (
-        <div className="text-center text-lg mb-4">
-          전술 적합도: {(fitScore * 100).toFixed(0)}%
-        </div>
-      )}
+        {/* 결과 / 안내 문구 */}
+        {loading && (
+          <div className="flex justify-center my-3">
+            <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-emerald-600 rounded-full"></div>
+          </div>
+        )}
 
-      {/* 축구장 */}
-      <div className="relative mx-auto bg-green-600 h-[400px] w-full max-w-4xl overflow-hidden">
-        {/* 센터라인 */}
-        <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white"></div>
+        {!loading && !fitScore && (
+          <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
+            전술과 상대팀을 선택한 뒤 라인업 추천 버튼을 눌러보세요!
+          </div>
+        )}
 
-        {/* 센터 서클 */}
-        <div
-          className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2"
-        ></div>
+        {fitScore !== null && !loading && (
+          <div className="text-left text-sm sm:text-base mb-3 font-semibold">
+            전술 적합도: {(fitScore * 100).toFixed(0)}%
+          </div>
+        )}
 
-        {/* 골대 */}
-        <div className="absolute left-0 top-1/2 w-20 h-40 border-2 border-white -translate-y-1/2"></div>
-        <div className="absolute right-0 top-1/2 w-20 h-40 border-2 border-white -translate-y-1/2"></div>
+        {/* 축구장과 라인업 목록 */}
+        <div className="flex flex-col lg:flex-row gap-6 flex-1 mt-1">
 
-        {/* 선수 표시 */}
-        {!loading &&
-          lineup.map((p, idx) => {
-            const pos = positions[p.position] || { top: "50%", left: "50%" };
-            return (
+          {/* 축구장 */}
+          <div className="flex items-center justify-center lg:flex-1 mb-4 lg:mb-0">
+            <div className="relative bg-green-600 w-full max-w-lg h-[280px] sm:h-[320px] md:h-[360px] overflow-hidden">
+
+              {/* 센터라인 */}
+              <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white"></div>
+
+              {/* 센터 서클 */}
               <div
-                key={idx}
-                className="absolute bg-white text-black text-xs font-bold px-2 py-1 border rounded-full"
-                style={{
-                  top: pos.top,
-                  left: pos.left,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                {p.player} ({(p.fit_score * 100).toFixed(0)}%)
-              </div>
-            );
-          })}
+                className="absolute top-1/2 left-1/2 w-16 h-16 sm:w-20 sm:h-20 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2"
+              ></div>
+
+              {/* 골대 */}
+              <div className="absolute left-0 top-1/2 w-12 h-24 sm:w-16 sm:h-32 border-2 border-white -translate-y-1/2"></div>
+              <div className="absolute right-0 top-1/2 w-12 h-24 sm:w-16 sm:h-32 border-2 border-white -translate-y-1/2"></div>
+
+              {/* 선수 표시 */}
+              {!loading &&
+                lineup.map((p, idx) => {
+                  const pos = positions[p.position] || { top: "50%", left: "50%" };
+                  return (
+                    <div
+                      key={idx}
+                      className="absolute bg-white text-black text-xs font-bold px-1.5 py-0.5 sm:px-2 sm:py-1 border rounded-full"
+                      style={{
+                        top: pos.top,
+                        left: pos.left,
+                        transform: "translate(-50%, -50%)",
+                      }}
+                    >
+                      <div className="text-center">
+                        <div>{p.player}</div>
+                        <div className="text-xs text-gray-600">{(p.fit_score * 100).toFixed(0)}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* 추천 라인업 목록 (항상 오른쪽 공간 유지) */}
+          <div className="lg:w-80">
+            <div className="text-base font-semibold text-gray-700 mb-3">추천 라인업</div>
+            <div className="max-h-[280px] sm:max-h-[320px] md:max-h-[360px] overflow-y-auto pr-2">
+              {loading && (
+                <div className="text-xs text-gray-400">라인업 계산 중...</div>
+              )}
+
+              {!loading && lineup.length === 0 && (
+                <div className="text-xs text-gray-400">아직 추천 라인업이 없습니다.</div>
+              )}
+
+              {!loading && lineup.length > 0 && (
+                <div className="space-y-2">
+                  {lineup.map((player, idx) => (
+                    <div key={idx} className="bg-gray-50 p-3 rounded text-sm border">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-semibold text-base">{player.position}</div>
+                          <div className="text-gray-700">{player.player}</div>
+                        </div>
+                        <div className="text-sm text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
+                          {(player.fit_score * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
