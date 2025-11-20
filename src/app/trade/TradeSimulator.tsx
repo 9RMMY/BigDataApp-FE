@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TradeSimulator() {
   const [leftTeam1, setLeftTeam1] = useState("");
@@ -8,10 +8,77 @@ export default function TradeSimulator() {
   const [rightTeam1, setRightTeam1] = useState("");
   const [rightTeam2, setRightTeam2] = useState("");
 
+  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+  const [leftPlayers, setLeftPlayers] = useState<
+    { player_id: string; player_name: string; position: string; team_id: string }[]
+  >([]);
+  const [rightPlayers, setRightPlayers] = useState<
+    { player_id: string; player_name: string; position: string; team_id: string }[]
+  >([]);
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const isReadyToTrade = leftTeam1 && leftTeam2 && rightTeam1 && rightTeam2;
+
+  // 팀 목록 로드
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch("/api/meta/teams");
+        if (!res.ok) return;
+        const data = await res.json();
+        setTeams(data);
+      } catch (e) {
+        // ignore for now
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // 왼쪽 팀 변경 시 해당 팀 선수 로드
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (!leftTeam1) {
+        setLeftPlayers([]);
+        setLeftTeam2("");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/meta/players?team_id=${leftTeam1}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setLeftPlayers(data);
+        setLeftTeam2("");
+      } catch (e) {
+        setLeftPlayers([]);
+        setLeftTeam2("");
+      }
+    };
+    fetchPlayers();
+  }, [leftTeam1]);
+
+  // 오른쪽 팀 변경 시 해당 팀 선수 로드
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (!rightTeam1) {
+        setRightPlayers([]);
+        setRightTeam2("");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/meta/players?team_id=${rightTeam1}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setRightPlayers(data);
+        setRightTeam2("");
+      } catch (e) {
+        setRightPlayers([]);
+        setRightTeam2("");
+      }
+    };
+    fetchPlayers();
+  }, [rightTeam1]);
 
   const handleTrade = async () => {
     if (!isReadyToTrade) return;
@@ -20,30 +87,24 @@ export default function TradeSimulator() {
     setResult(null);
 
     try {
-      // 실제 API 요청 예시 (주석)
-      /*
-      const res = await fetch('/api/trades/simulate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/trades/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           team_a_id: leftTeam1,
           team_b_id: rightTeam1,
           players_a: [leftTeam2],
-          players_b: [rightTeam2]
-        })
+          players_b: [rightTeam2],
+        }),
       });
+
+      if (!res.ok) {
+        throw new Error("API Error");
+      }
+
       const data = await res.json();
       setResult({ ok: true, message: data.summary });
-      */
-
-      // 하드코딩 결과
-      setTimeout(() => {
-        setResult({
-          ok: true,
-          message: "울산 수비력 향상, 포항 공격력 소폭 감소"
-        });
-        setLoading(false);
-      }, 1000);
+      setLoading(false);
 
     } catch (err) {
       setResult({ ok: false, message: "에러 발생!" });
@@ -62,32 +123,39 @@ export default function TradeSimulator() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-5 sm:p-8 md:p-10 flex flex-col">
+      <div className="flex-1 p-6 flex flex-col">
 
         {/* Dropdown + Trade Button */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
           <select
-            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={leftTeam1}
             onChange={(e) => setLeftTeam1(e.target.value)}
           >
-            <option value="">Select</option>
-            <option value="ulsan">울산</option>
-            <option value="pohang">포항</option>
+            <option value="">팀 선택</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
           </select>
 
           <select
-            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={leftTeam2}
             onChange={(e) => setLeftTeam2(e.target.value)}
+            disabled={!leftTeam1 || leftPlayers.length === 0}
           >
-            <option value="">Select</option>
-            <option value="p1">선수1</option>
-            <option value="p2">선수2</option>
+            <option value="">선수 선택</option>
+            {leftPlayers.map((p) => (
+              <option key={p.player_id} value={p.player_id}>
+                {p.player_name}
+              </option>
+            ))}
           </select>
 
           <button
-            className={`px-4 py-2 rounded text-white text-sm sm:text-base transition w-[130px] sm:w-auto ${
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${
               isReadyToTrade
                 ? "bg-primary hover:bg-primary/80"
                 : "bg-gray-400 cursor-not-allowed"
@@ -99,48 +167,55 @@ export default function TradeSimulator() {
           </button>
 
           <select
-            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={rightTeam1}
             onChange={(e) => setRightTeam1(e.target.value)}
           >
-            <option value="">Select</option>
-            <option value="ulsan">울산</option>
-            <option value="pohang">포항</option>
+            <option value="">팀 선택</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
           </select>
 
           <select
-            className="border p-2 rounded w-32 sm:w-36 md:w-40 text-sm sm:text-base"
+            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={rightTeam2}
             onChange={(e) => setRightTeam2(e.target.value)}
+            disabled={!rightTeam1 || rightPlayers.length === 0}
           >
-            <option value="">Select</option>
-            <option value="p1">선수1</option>
-            <option value="p2">선수2</option>
+            <option value="">선수 선택</option>
+            {rightPlayers.map((p) => (
+              <option key={p.player_id} value={p.player_id}>
+                {p.player_name}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* 안내 문구 */}
         {!loading && !result && (
-          <div className="text-left text-gray-500 mb-10 text-base sm:text-lg">
+          <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
             트레이드 조건을 모두 선택한 뒤 Trade 버튼을 눌러보세요!
           </div>
         )}
 
         {/* 로딩 상태 */}
         {loading && (
-          <div className="flex justify-center my-10">
-            <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-emerald-600 rounded-full"></div>
+          <div className="flex justify-center my-3">
+            <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-emerald-600 rounded-full"></div>
           </div>
         )}
 
         {/* 결과 박스 */}
         {result && (
-          <div className="flex justify-center mt-0 w-full overflow-hidden">
-            <div className="bg-white shadow-lg rounded-xl p-6 w-full text-left border">
-              <h2 className="text-xl sm:text-xl font-bold mb-2">
+          <div className="flex justify-center mt-2 w-full overflow-hidden">
+            <div className="bg-white shadow-lg rounded-xl p-4 w-full text-left border">
+              <h2 className="text-lg sm:text-xl font-bold mb-2">
                 {result.ok ? "🎉 트레이드 성공!" : "❌ 트레이드 실패"}
               </h2>
-              <p className="text-gray-600 text-sm sm:text-lg">{result.message}</p>
+              <p className="text-gray-600 text-xs sm:text-sm">{result.message}</p>
             </div>
           </div>
         )}

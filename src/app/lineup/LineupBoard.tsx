@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function LineupBoard() {
+  const [teamId, setTeamId] = useState("");
   const [formation, setFormation] = useState("");
   const [opponent, setOpponent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -11,7 +12,24 @@ export default function LineupBoard() {
     { position: string; player: string; fit_score: number }[]
   >([]);
 
-  const isReady = formation && opponent;
+  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+
+  const isReady = teamId && formation && opponent;
+
+  // 팀 목록 로드
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch("/api/meta/teams");
+        if (!res.ok) return;
+        const data = await res.json();
+        setTeams(data);
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchTeams();
+  }, []);
 
   const handleRecommend = async () => {
     if (!isReady) return;
@@ -20,23 +38,29 @@ export default function LineupBoard() {
     setFitScore(null);
     setLineup([]);
 
-    // --- API 연동 예정 ---
-    // const res = await fetch("/api/recommend_lineup", { method: "POST", body: JSON.stringify({formation, opponent}) });
-    // const data = await res.json();
-    // setFitScore(data.formation_fit);
-    // setLineup(data.recommended_lineup);
+    try {
+      const res = await fetch("/api/lineup/recommendation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          team_id: teamId,
+          formation,
+          opponent_team_id: opponent,
+        }),
+      });
 
-    // 하드코딩 예제
-    setTimeout(() => {
-      setFitScore(0.89);
-      setLineup([
-        { position: "GK", player: "김승규", fit_score: 0.92 },
-        { position: "FW", player: "조규성", fit_score: 0.87 },
-        { position: "MF", player: "손흥민", fit_score: 0.85 },
-        { position: "DF", player: "김민재", fit_score: 0.9 },
-      ]);
-      setLoading(false);
-    }, 1500);
+      if (!res.ok) {
+        throw new Error("API Error");
+      }
+
+      const data = await res.json();
+      setFitScore(data.formation_fit);
+      setLineup(data.recommended_lineup);
+    } catch (e) {
+      setFitScore(null);
+    }
+
+    setLoading(false);
   };
 
   const positions: { [key: string]: { top: string; left: string } } = {
@@ -57,10 +81,23 @@ export default function LineupBoard() {
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 p-3 sm:p-8 md:p-10 flex flex-col">
+      <div className="flex-1 p-6 flex flex-col">
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-2">
+          <select
+            className="border p-1 rounded w-28 sm:w-32 md:w-40 text-xs sm:text-sm"
+            value={teamId}
+            onChange={(e) => setTeamId(e.target.value)}
+          >
+            <option value="">팀 선택</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
+          </select>
+
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={formation}
@@ -78,8 +115,11 @@ export default function LineupBoard() {
             onChange={(e) => setOpponent(e.target.value)}
           >
             <option value="">상대팀 선택</option>
-            <option value="팀 A">팀 A</option>
-            <option value="팀 B">팀 B</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
           </select>
 
           <button
@@ -109,17 +149,17 @@ export default function LineupBoard() {
         )}
 
         {fitScore !== null && !loading && (
-          <div className="text-left text-sm sm:text-base mb-3 font-semibold">
+          <div className="text-left text-sm sm:text-base ml-64 font-semibold">
             전술 적합도: {(fitScore * 100).toFixed(0)}%
           </div>
         )}
 
         {/* 축구장과 라인업 목록 */}
-        <div className="flex flex-col lg:flex-row gap-6 flex-1 mt-1">
+        <div className="flex flex-col lg:flex-row gap-6 flex-1">
 
           {/* 축구장 */}
           <div className="flex items-center justify-center lg:flex-1 mb-4 lg:mb-0">
-            <div className="relative bg-green-600 w-full max-w-lg h-[280px] sm:h-[320px] md:h-[360px] overflow-hidden">
+            <div className="relative bg-green-600 w-full h-[300px] overflow-hidden">
 
               {/* 센터라인 */}
               <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white"></div>
@@ -158,9 +198,9 @@ export default function LineupBoard() {
           </div>
 
           {/* 추천 라인업 목록 (항상 오른쪽 공간 유지) */}
-          <div className="lg:w-80">
-            <div className="text-base font-semibold text-gray-700 mb-3">추천 라인업</div>
-            <div className="max-h-[280px] sm:max-h-[320px] md:max-h-[360px] overflow-y-auto pr-2">
+          <div className="w-60">
+            <div className="text-base font-semibold text-sm text-gray-700 mb-3">추천 라인업</div>
+            <div className="max-h-[280px] overflow-y-auto pr-2">
               {loading && (
                 <div className="text-xs text-gray-400">라인업 계산 중...</div>
               )}
@@ -175,10 +215,10 @@ export default function LineupBoard() {
                     <div key={idx} className="bg-gray-50 p-3 rounded text-sm border">
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="font-semibold text-base">{player.position}</div>
-                          <div className="text-gray-700">{player.player}</div>
+                          <div className="font-semibold text-base text-xs">{player.position}</div>
+                          <div className="text-gray-700 text-xs">{player.player}</div>
                         </div>
-                        <div className="text-sm text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
+                        <div className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded">
                           {(player.fit_score * 100).toFixed(0)}%
                         </div>
                       </div>

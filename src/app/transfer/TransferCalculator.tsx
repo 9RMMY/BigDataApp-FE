@@ -1,15 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function TransferCalculator() {
   const [team, setTeam] = useState("");
   const [player, setPlayer] = useState("");
 
+  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+  const [players, setPlayers] = useState<
+    { player_id: string; player_name: string; position: string; team_id: string }[]
+  >([]);
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   const isReady = team && player;
+
+  // 팀 목록 로드
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch("/api/meta/teams");
+        if (!res.ok) return;
+        const data = await res.json();
+        setTeams(data);
+      } catch (e) {
+        // ignore for now
+      }
+    };
+    fetchTeams();
+  }, []);
+
+  // 팀 선택 시 해당 팀 선수 목록 로드
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (!team) {
+        setPlayers([]);
+        setPlayer("");
+        return;
+      }
+      try {
+        const res = await fetch(`/api/meta/players?team_id=${team}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setPlayers(data);
+        setPlayer("");
+      } catch (e) {
+        setPlayers([]);
+        setPlayer("");
+      }
+    };
+    fetchPlayers();
+  }, [team]);
 
   const handleTransfer = async () => {
     if (!isReady) return;
@@ -18,11 +60,25 @@ export default function TransferCalculator() {
     setResult(null);
 
     try {
-      const res = await new Promise<string>((resolve) =>
-        setTimeout(() => resolve(`${team}팀의 ${player} 영입/방출 완료!`), 2000)
+      const res = await fetch("/api/transfers/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          team_id: team,
+          player_in_id: player,
+          type: "transfer",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("API Error");
+      }
+
+      const data = await res.json();
+      setResult(
+        `${team}팀의 ${player} 영입/방출 완료! (예상 승점 변화: ${data.expected_points_change}, 팀 평점: ${data.new_team_rating})`
       );
-      setResult(res);
-    } catch {
+    } catch (e) {
       setResult("에러 발생!");
     }
 
@@ -40,32 +96,39 @@ export default function TransferCalculator() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 flex flex-col">
 
         {/* Dropdown + Button */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
           <select
-            className="border p-2 rounded w-40"
+            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
             value={team}
             onChange={(e) => setTeam(e.target.value)}
           >
             <option value="">팀 선택</option>
-            <option value="A">팀 A</option>
-            <option value="B">팀 B</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
           </select>
 
           <select
-            className="border p-2 rounded w-40"
+            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
             value={player}
             onChange={(e) => setPlayer(e.target.value)}
+            disabled={!team || players.length === 0}
           >
             <option value="">선수 선택</option>
-            <option value="홍길동">홍길동</option>
-            <option value="김철수">김철수</option>
+            {players.map((p) => (
+              <option key={p.player_id} value={p.player_id}>
+                {p.player_name}
+              </option>
+            ))}
           </select>
 
           <button
-            className={`px-4 py-2 rounded text-white ${isReady
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[130px] sm:w-auto ${isReady
               ? "bg-primary hover:bg-primary/80"
               : "bg-gray-400 cursor-not-allowed"
               }`}
@@ -78,23 +141,23 @@ export default function TransferCalculator() {
 
         {/* 안내 문구 */}
         {!loading && !result && !isReady && (
-          <div className="text-left text-gray-500 mb-6 text-sm sm:text-base">
+          <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
             팀과 선수를 선택한 뒤 버튼을 눌러주세요.
           </div>
         )}
 
         {/* 로딩 */}
         {loading && (
-          <div className="flex justify-center mr-6">
-            <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-primary rounded-full"></div>
+          <div className="flex justify-center my-3">
+            <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-primary rounded-full"></div>
           </div>
         )}
 
         {/* 결과 박스 */}
         {result && (
-          <div className="flex justify-center w-full">
-            <div className="bg-white shadow-lg rounded-xl p-6 w-full text-left border">
-              <p className="text-gray-700 text-base sm:text-lg">{result}</p>
+          <div className="flex justify-center w-full mt-2">
+            <div className="bg-white shadow-lg rounded-xl p-4 w-full text-left border">
+              <p className="text-gray-700 text-sm sm:text-base">{result}</p>
             </div>
           </div>
         )}
