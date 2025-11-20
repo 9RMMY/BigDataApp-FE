@@ -13,7 +13,7 @@ const featureItems = [
   { label: "영입방출", path: "/transfer" },
   { label: "라인업", path: "/lineup" },
   { label: "전략제안", path: "/strategy" },
-  { label: "설명", path: "/tutorial" },
+  { label: "설명", path: "/playermanage" },
 ];
 
 const matchResults = [

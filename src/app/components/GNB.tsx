@@ -54,8 +54,8 @@ const GNB = () => {
             전략제안
           </LinkButton>
           <div className="hidden h-4 w-px bg-white/50 sm:block" />
-          <LinkButton href="/tutorial" variant="ghost" className="px-0">
-            설명
+          <LinkButton href="/playermanage" variant="ghost" className="px-0">
+            선수관리
           </LinkButton>
         </div>
       </nav>
