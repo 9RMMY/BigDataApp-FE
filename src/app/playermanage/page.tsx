@@ -24,6 +24,7 @@ export default function PlayerManage() {
 
   const [searchName, setSearchName] = useState("");
   const [searchPosition, setSearchPosition] = useState("");
+  const [myTeamId, setMyTeamId] = useState<string>("10");
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -66,23 +67,67 @@ export default function PlayerManage() {
     fetchPlayers();
   }, [selectedTeamId]);
 
-  const handleRelease = (playerId: string) => {
-    setPlayers((prev) => prev.filter((p) => p.player_id !== playerId));
+  const handleRelease = async (playerId: string) => {
+    try {
+      const res = await fetch("/api/myteam/release/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ player_id: playerId }),
+      });
+
+      if (!res.ok) {
+        throw new Error("선수 방출에 실패했습니다.");
+      }
+
+      const result = await res.json();
+      if (result.success) {
+        setPlayers((prev) => prev.filter((p) => p.player_id !== playerId));
+        alert("선수 방출이 완료되었습니다.");
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "선수 방출 중 오류가 발생했습니다.");
+    }
   };
 
-  const handleRecruit = () => {
-    if (!selectedTeamId || !searchName.trim()) return;
+  const handleRecruit = async () => {
+    if (!searchName.trim()) {
+      alert("선수 이름을 입력하세요.");
+      return;
+    }
 
-    const newPlayer: Player = {
-      player_id: `temp-${Date.now()}`,
-      player_name: searchName,
-      position: searchPosition || "FW",
-      team_id: selectedTeamId,
-    };
+    try {
+      const res = await fetch("/api/myteam/acquire/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ player_id: searchName.trim() }),
+      });
 
-    setPlayers((prev) => [...prev, newPlayer]);
-    setSearchName("");
-    setSearchPosition("");
+      if (!res.ok) {
+        throw new Error("선수 영입에 실패했습니다.");
+      }
+
+      const result = await res.json();
+      if (result.success) {
+        alert("선수 영입이 완료되었습니다.");
+        setSearchName("");
+        setSearchPosition("");
+        
+        // Refresh players list if my team is selected
+        if (selectedTeamId === myTeamId) {
+          const refreshRes = await fetch(`/api/meta/players?team_id=${selectedTeamId}`);
+          if (refreshRes.ok) {
+            const data: Player[] = await refreshRes.json();
+            setPlayers(data);
+          }
+        }
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "선수 영입 중 오류가 발생했습니다.");
+    }
   };
 
   return (
@@ -157,7 +202,7 @@ export default function PlayerManage() {
 
           <input
             type="text"
-            placeholder="선수 이름"
+            placeholder="선수 ID"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
             className="border rounded px-3 py-2 text-sm shadow-sm"
@@ -165,7 +210,7 @@ export default function PlayerManage() {
 
           <input
             type="text"
-            placeholder="포지션 (FW/MF/DF)"
+            placeholder="포지션 (참고용)"
             value={searchPosition}
             onChange={(e) => setSearchPosition(e.target.value)}
             className="border rounded px-3 py-2 text-sm shadow-sm"
@@ -173,15 +218,13 @@ export default function PlayerManage() {
 
           <button
             onClick={handleRecruit}
-            disabled={!selectedTeamId || !searchName.trim()}
+            disabled={!searchName.trim()}
             className="px-3 py-2 text-sm rounded bg-primary hover:bg-primary/80 text-white  disabled:bg-gray-300"
           >
             영입하기
           </button>
 
-          {!selectedTeamId && (
-            <span className="text-xs text-gray-500">팀을 먼저 선택하세요.</span>
-          )}
+          <span className="text-xs text-gray-500">선수 ID를 입력하세요.</span>
         </div>
 
       </div>
