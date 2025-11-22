@@ -1,4 +1,3 @@
-// src/app/components/GNB.tsx
 "use client";
 
 import Link from "next/link";
@@ -11,7 +10,7 @@ const GNB = () => {
         {/* logo */}
         <Link href="/" className="flex items-center">
           <div className="flex h-12 w-12 items-center justify-center text-lg font-bold tracking-tight">
-            Logo
+            SocccerSight
           </div>
         </Link>
 

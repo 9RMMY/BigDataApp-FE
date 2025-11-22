@@ -1,59 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Card from "../components/Card";
 
 type MVPCandidate = {
-  id: number;
-  name: string;
+  player: string;
+  probability: number;
 };
 
-type Best11Player = {
-  id: number;
-  name: string;
-  position: string;
-  probability: number;
-  hasStar?: boolean;
+type MVPResponse = {
+  team_id: string;
+  season: number;
+  candidates: MVPCandidate[];
+};
+
+type Best11Item = {
+  position: string; // "GK", "DF", "MF", "FW"
+  player: string;
+  probability: number; // 0~1
+};
+
+type Best11Response = {
+  season: number;
+  best11: Best11Item[];
 };
 
 export default function MVPPage() {
-  const [mvpSearchQuery, setMvpSearchQuery] = useState("");
-  const [mvpSelectedPosition, setMvpSelectedPosition] = useState("");
-  const [mvpSelectedGrowth, setMvpSelectedGrowth] = useState("");
+  // MVP 상태
+  const [mvpCandidates, setMvpCandidates] = useState<MVPCandidate[]>([]);
+  const [loadingMvp, setLoadingMvp] = useState(true);
+
+  // Best11 상태
+  const [best11, setBest11] = useState<Best11Item[]>([]);
+  const [loadingBest11, setLoadingBest11] = useState(true);
 
   const [best11SearchQuery, setBest11SearchQuery] = useState("");
   const [best11SelectedPosition, setBest11SelectedPosition] = useState("");
-  const [best11SelectedGrowth, setBest11SelectedGrowth] = useState("");
 
-  const mvpCandidates: MVPCandidate[] = [
-    { id: 1, name: "김민재" },
-    { id: 2, name: "손흥민" },
-    { id: 3, name: "이강인" },
-  ];
+  // MVP API 호출
+  useEffect(() => {
+    async function fetchMvpCandidates() {
+      try {
+        const res = await fetch("/api/season/2026/mvp-candidates");
+        const data: MVPResponse = await res.json();
 
-  const best11Players: Best11Player[] = [
-    { id: 1, name: "김민재", position: "수비수", probability: 92 },
-    { id: 2, name: "손흥민", position: "공격수", probability: 99 },
-    { id: 3, name: "이강인", position: "미드필더", probability: 96 },
-    { id: 4, name: "조현우", position: "골키퍼", probability: 88 },
-    { id: 5, name: "정우영", position: "미드필더", probability: 87 },
-    { id: 6, name: "황희찬", position: "공격수", probability: 94 },
-    { id: 7, name: "김영권", position: "수비수", probability: 85 },
-    { id: 8, name: "홍현석", position: "미드필더", probability: 78 },
-    { id: 9, name: "백승호", position: "미드필더", probability: 81 },
-    { id: 10, name: "박지수", position: "수비수", probability: 83 },
-    { id: 11, name: "오현규", position: "공격수", probability: 74 },
-    { id: 12, name: "송범근", position: "골키퍼", probability: 70 },
-  ];
+        setMvpCandidates(data.candidates);
+      } catch (err) {
+        console.error("MVP 후보 불러오기 실패:", err);
+      } finally {
+        setLoadingMvp(false);
+      }
+    }
+    fetchMvpCandidates();
+  }, []);
 
-  {/* 베스트11 후보 필터링 */}
-  const filteredBest11 = best11Players
-    .filter((player) =>
-      best11SelectedPosition ? player.position === best11SelectedPosition : true
+  // Best11 API 호출
+  useEffect(() => {
+    async function fetchBest11() {
+      try {
+        const res = await fetch("/api/season/2026/best11");
+        const data: Best11Response = await res.json();
+        setBest11(data.best11);
+      } catch (err) {
+        console.error("Best11 불러오기 실패:", err);
+      } finally {
+        setLoadingBest11(false);
+      }
+    }
+    fetchBest11();
+  }, []);
+
+  {
+    /* 베스트11 후보 필터링 */
+  }
+  const filteredBest11 = best11
+    .filter((item) =>
+      best11SelectedPosition ? item.position === best11SelectedPosition : true
     )
-    .filter((player) =>
+    .filter((item) =>
       best11SearchQuery
-        ? player.name.toLowerCase().includes(best11SearchQuery.toLowerCase())
+        ? item.player.toLowerCase().includes(best11SearchQuery.toLowerCase())
         : true
     )
     .sort((a, b) => b.probability - a.probability);
@@ -79,56 +105,41 @@ export default function MVPPage() {
                   현재 진행 중인 시즌 데이터를 기반으로 예측합니다.
                 </p>
               </div>
-
-              {/* 세로선 */}
-              <div className="hidden lg:block w-px bg-gray-300 h-full mx-auto"></div>
-
-              {/* 작년 MVP 후보 */}
-              <div>
-                <Card className="bg-white border border-gray-300 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    작년 MVP 후보
-                  </h3>
-
-                  <div className="flex gap-4">
-                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0" />
-                    <div className="flex-1 space-y-2 text-sm">
-                      <div className="font-medium text-gray-900">이름이름</div>
-                      <div className="text-gray-600">경기력 지표</div>
-                      <div className="text-gray-600">시즌 공헌도</div>
-                      <div className="text-gray-600">팀 성적</div>
-                      <div className="text-gray-600">보완점</div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
             </div>
           </Card>
         </div>
 
         <div className="space-y-10 mt-6">
-          
           {/* MVP 후보 */}
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              {mvpCandidates.map((candidate) => (
-                <Card key={candidate.id} className="bg-white p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    MVP 후보 {candidate.id}
-                  </h3>
-                  <div className="flex gap-4">
-                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0" />
-                    <div className="flex-1 space-y-2 text-sm">
-                      <div className="font-medium text-gray-900">이름</div>
-                      <div className="text-gray-600">경기력 지표</div>
-                      <div className="text-gray-600">시즌 공헌도</div>
-                      <div className="text-gray-600">팀 성적</div>
-                      <div className="text-gray-600">보완점</div>
+            {loadingMvp ? (
+              <div className="text-center text-gray-500 py-10">
+                {" "}
+                불러오는 중...{" "}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {mvpCandidates.map((candidate, index) => (
+                  <Card key={index} className="bg-white p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      MVP 후보 {index + 1}
+                    </h3>
+
+                    <div className="flex gap-4">
+                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0" />
+                      <div className="flex-1 space-y-2 text-sm">
+                        <div className="font-medium text-gray-900">
+                          {candidate.player}
+                        </div>
+                        <div className="text-gray-600">
+                          예측 확률: {(candidate.probability * 100).toFixed(1)}%
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -137,7 +148,6 @@ export default function MVPPage() {
         {/* 베스트11 섹션 */}
         <section className="mt-12 space-y-6">
           <div className="space-y-6">
-            
             {/* 제목 */}
             <Card className="bg-white p-8">
               <h2 className="text-4xl font-bold text-gray-900 mb-2">
@@ -156,13 +166,13 @@ export default function MVPPage() {
                       onChange={(e) =>
                         setBest11SelectedPosition(e.target.value)
                       }
-                      className="px-4 py-2 bg-white rounded-lg border border-gray-300 text-sm font-medium text-gray-700"
+                      className="px-4 py-2 bg-white rounded-lg border border-gray-300 text-sm"
                     >
                       <option value="">포지션 필터</option>
-                      <option value="공격수">공격수</option>
-                      <option value="미드필더">미드필더</option>
-                      <option value="수비수">수비수</option>
-                      <option value="골키퍼">골키퍼</option>
+                      <option value="공격수">공격수(FW)</option>
+                      <option value="미드필더">미드필더(MF)</option>
+                      <option value="수비수">수비수(DF)</option>
+                      <option value="골키퍼">골키퍼(GK)</option>
                     </select>
                   </div>
 
@@ -187,17 +197,23 @@ export default function MVPPage() {
 
           {/* 베스트11 카드 */}
           <div className="grid grid-cols-3 gap-4">
-            {filteredBest11.map((player) => (
-              <Card key={player.id}>
-                <div className="text-md font-medium text-gray-900">
-                  {player.name}
-                </div>
-                <div className="text-gray-600 text-sm">{player.position}</div>
-                <div className="text-gray-600 text-xl text-right">
-                  확률: {player.probability}%
-                </div>
-              </Card>
-            ))}
+            {loadingBest11 ? (
+              <div className="col-span-3 text-center text-gray-500 py-10">
+                불러오는 중...
+              </div>
+            ) : (
+              filteredBest11.map((item, index) => (
+                <Card key={index}>
+                  <div className="text-md font-medium text-gray-900">
+                    {item.player}
+                  </div>
+                  <div className="text-gray-600 text-sm">{item.position}</div>
+                  <div className="text-gray-600 text-xl text-right">
+                    확률: {(item.probability * 100).toFixed(1)}%
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </section>
       </main>
