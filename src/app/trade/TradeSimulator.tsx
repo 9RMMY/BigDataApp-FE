@@ -21,22 +21,29 @@ export default function TradeSimulator() {
 
   const isReadyToTrade = leftTeam1 && leftTeam2 && rightTeam1 && rightTeam2;
 
-  // 팀 목록 로드
-  useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const res = await fetch("/api/meta/teams");
-        if (!res.ok) return;
-        const data = await res.json();
-        setTeams(data);
-      } catch (e) {
-        // ignore for now
-      }
-    };
-    fetchTeams();
-  }, []);
 
-  // 왼쪽 팀 변경 시 해당 팀 선수 로드
+useEffect(() => {
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch("/api/meta/teams");
+      if (!res.ok) return;
+
+      const data = await res.json() as { team_id: string; team_name: string }[];
+
+      const uniqueTeams = Array.from(new Map(data.map(t => [t.team_id, t])).values());
+
+      setTeams(uniqueTeams);
+    } catch (e) {
+      console.error("팀 목록 로드 실패", e);
+    }
+  };
+
+  fetchTeams();
+}, []);
+
+  // ===============================
+  // 🔵 왼쪽 팀 선수 로드
+  // ===============================
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!leftTeam1) {
@@ -44,9 +51,11 @@ export default function TradeSimulator() {
         setLeftTeam2("");
         return;
       }
+
       try {
         const res = await fetch(`/api/meta/players?team_id=${leftTeam1}`);
         if (!res.ok) return;
+
         const data = await res.json();
         setLeftPlayers(data);
         setLeftTeam2("");
@@ -55,10 +64,13 @@ export default function TradeSimulator() {
         setLeftTeam2("");
       }
     };
+
     fetchPlayers();
   }, [leftTeam1]);
 
-  // 오른쪽 팀 변경 시 해당 팀 선수 로드
+  // ===============================
+  // 🔴 오른쪽 팀 선수 로드
+  // ===============================
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!rightTeam1) {
@@ -66,9 +78,11 @@ export default function TradeSimulator() {
         setRightTeam2("");
         return;
       }
+
       try {
         const res = await fetch(`/api/meta/players?team_id=${rightTeam1}`);
         if (!res.ok) return;
+
         const data = await res.json();
         setRightPlayers(data);
         setRightTeam2("");
@@ -77,9 +91,13 @@ export default function TradeSimulator() {
         setRightTeam2("");
       }
     };
+
     fetchPlayers();
   }, [rightTeam1]);
 
+  // ===============================
+  // 🔥 트레이드 실행
+  // ===============================
   const handleTrade = async () => {
     if (!isReadyToTrade) return;
 
@@ -98,24 +116,27 @@ export default function TradeSimulator() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("API Error");
-      }
+      if (!res.ok) throw new Error("API response not OK");
 
       const data = await res.json();
-      setResult({ ok: true, message: data.summary });
-      setLoading(false);
 
+      setResult({
+        ok: true,
+        message: `${data.summary} (log_id: ${data.log_id})`,
+      });
     } catch (err) {
       setResult({ ok: false, message: "에러 발생!" });
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
+  // ===============================
+  // 🔽 UI
+  // ===============================
   return (
     <div className="flex flex-col md:flex-row flex-1 bg-white">
-
-      {/* Left Sidebar */}
+      {/* Sidebar */}
       <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
           TRADE<br />SIMULATOR
@@ -124,9 +145,9 @@ export default function TradeSimulator() {
 
       {/* Main Content */}
       <div className="flex-1 p-6 flex flex-col">
-
-        {/* Dropdown + Trade Button */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
+          
+          {/* 왼쪽 팀 */}
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={leftTeam1}
@@ -140,6 +161,7 @@ export default function TradeSimulator() {
             ))}
           </select>
 
+          {/* 왼쪽 선수 */}
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={leftTeam2}
@@ -154,11 +176,10 @@ export default function TradeSimulator() {
             ))}
           </select>
 
+          {/* Trade 버튼 */}
           <button
             className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${
-              isReadyToTrade
-                ? "bg-primary hover:bg-primary/80"
-                : "bg-gray-400 cursor-not-allowed"
+              isReadyToTrade ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
             }`}
             onClick={handleTrade}
             disabled={!isReadyToTrade}
@@ -166,6 +187,7 @@ export default function TradeSimulator() {
             Trade
           </button>
 
+          {/* 오른쪽 팀 */}
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={rightTeam1}
@@ -179,6 +201,7 @@ export default function TradeSimulator() {
             ))}
           </select>
 
+          {/* 오른쪽 선수 */}
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={rightTeam2}
@@ -194,21 +217,18 @@ export default function TradeSimulator() {
           </select>
         </div>
 
-        {/* 안내 문구 */}
         {!loading && !result && (
           <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
             트레이드 조건을 모두 선택한 뒤 Trade 버튼을 눌러보세요!
           </div>
         )}
 
-        {/* 로딩 상태 */}
         {loading && (
           <div className="flex justify-center my-3">
             <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-emerald-600 rounded-full"></div>
           </div>
         )}
 
-        {/* 결과 박스 */}
         {result && (
           <div className="flex justify-center mt-2 w-full overflow-hidden">
             <div className="bg-white shadow-lg rounded-xl p-4 w-full text-left border">
@@ -219,7 +239,6 @@ export default function TradeSimulator() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
