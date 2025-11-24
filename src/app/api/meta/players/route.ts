@@ -1,3 +1,4 @@
+// /app/api/meta/players/route.ts
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -6,15 +7,14 @@ export async function GET(req: Request) {
   const teamId = searchParams.get("team_id");
   const position = searchParams.get("position");
 
-  // 예시 데이터 (실제 DB 연동 시 대체)
+  // 실제 DB 연동 전 임시 데이터
   const players = [
-    { player_id: "p123", player_name: "조규성", position: "FW", team_id: "ulsan" },
-    { player_id: "p456", player_name: "이동경", position: "MF", team_id: "ulsan" },
-    { player_id: "p789", player_name: "문선민", position: "FW", team_id: "jeonbuk" },
-    { player_id: "p101", player_name: "한교원", position: "MF", team_id: "jeonbuk" },
+    { player_id: "365", player_name: "조규성", position: "FW", team_id: "9" },  // 울산
+    { player_id: "366", player_name: "이동경", position: "MF", team_id: "9" },  // 울산
+    { player_id: "367", player_name: "문선민", position: "FW", team_id: "10" }, // 전북
+    { player_id: "368", player_name: "한교원", position: "MF", team_id: "10" }, // 전북
   ];
 
-  /** 필터링 */
   let filtered = players;
 
   if (teamId) {
