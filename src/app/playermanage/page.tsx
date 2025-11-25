@@ -30,7 +30,7 @@ export default function PlayerManage() {
     const fetchTeams = async () => {
       try {
         setLoadingTeams(true);
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch("/api/meta/teams.php");
         if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
         const data: Team[] = await res.json();
         setTeams(data);
@@ -53,7 +53,7 @@ export default function PlayerManage() {
 
       try {
         setLoadingPlayers(true);
-        const res = await fetch(`/api/meta/players?team_id=${selectedTeamId}`);
+        const res = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
         if (!res.ok) throw new Error("선수 정보를 불러오지 못했습니다.");
         const data: Player[] = await res.json();
         setPlayers(data);
@@ -124,7 +124,7 @@ export default function PlayerManage() {
         
         // Refresh players list if my team is selected
         if (selectedTeamId === myTeamId) {
-          const refreshRes = await fetch(`/api/meta/players?team_id=${selectedTeamId}`);
+          const refreshRes = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
           if (refreshRes.ok) {
             const data: Player[] = await refreshRes.json();
             setPlayers(data);
