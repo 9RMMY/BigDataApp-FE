@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Card from "./components/Card";
 import GNB from "./components/GNB";
 import LinkButton from "./components/buttons/LinkButton";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useMemo } from "react";
 
 type MonthlyRankData = {
   data_period: string;
@@ -21,6 +22,19 @@ type TeamRankingResponse = {
   monthly: MonthlyRankData[];
 };
 
+type GoalRatioData = {
+  category: string;
+  value: number;
+  fill: string;
+};
+
+type GoalStatsResponse = {
+  league_total_goals: number;
+  team_total_goals: number;
+  midfielder_goals: number;
+  forward_goals: number;
+};
+
 const featureItems = [
   { label: "선수분석", path: "/player" },
   { label: "MVP & 베스트11", path: "/mvp" },
@@ -35,110 +49,85 @@ const featureItems = [
 const matchResults = [
   {
     id: 1,
-    date: "11월 8일 토요일 1",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 23일 토요일",
+    stadium: "울산문수축구경기장 14:00",
+    home: "울산 현대",
+    away: "전북 현대",
+    score: "2 - 1",
   },
   {
     id: 2,
-    date: "11월 8일 토요일 2",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 23일 토요일",
+    stadium: "포항스틸야드 16:30",
+    home: "포항 스틸러스",
+    away: "제주 유나이티드",
+    score: "3 - 0",
   },
   {
     id: 3,
-    date: "11월 8일 토요일 3",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 24일 일요일",
+    stadium: "전주월드컵경기장 14:00",
+    home: "전북 현대",
+    away: "강원 FC",
+    score: "1 - 1",
   },
   {
     id: 4,
-    date: "11월 8일 토요일 4",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 24일 일요일",
+    stadium: "서울월드컵경기장 16:30",
+    home: "FC 서울",
+    away: "대구 FC",
+    score: "2 - 3",
   },
   {
     id: 5,
-    date: "11월 8일 토요일 5",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 30일 토요일",
+    stadium: "수원월드컵경기장 14:00",
+    home: "수원 삼성",
+    away: "인천 유나이티드",
+    score: "1 - 0",
   },
   {
     id: 6,
-    date: "11월 8일 토요일 6",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "11월 30일 토요일",
+    stadium: "광주축구전용경기장 16:30",
+    home: "광주 FC",
+    away: "김천 상무",
+    score: "2 - 2",
   },
   {
     id: 7,
-    date: "11월 8일 토요일 7",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "12월 1일 일요일",
+    stadium: "대전월드컵경기장 14:00",
+    home: "대전 하나",
+    away: "울산 현대",
+    score: "0 - 2",
   },
   {
     id: 8,
-    date: "11월 8일 토요일 8",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "12월 1일 일요일",
+    stadium: "창원축구센터 16:30",
+    home: "포항 스틸러스",
+    away: "FC 서울",
+    score: "1 - 1",
   },
   {
     id: 9,
-    date: "11월 8일 토요일 9",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "12월 7일 토요일",
+    stadium: "전주월드컵경기장 14:00",
+    home: "전북 현대",
+    away: "대구 FC",
+    score: "3 - 1",
   },
   {
     id: 10,
-    date: "11월 8일 토요일 10",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 11,
-    date: "11월 8일 토요일 11",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 12,
-    date: "11월 8일 토요일 12",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
-  },
-  {
-    id: 13,
-    date: "11월 8일 토요일 13",
-    stadium: "제주 월드컵경기장 14:00",
-    home: "제주",
-    away: "안양",
-    score: "1 - 2",
+    date: "12월 7일 토요일",
+    stadium: "제주월드컵경기장 16:30",
+    home: "제주 유나이티드",
+    away: "강원 FC",
+    score: "2 - 0",
   },
 ];
-
 
 export default function Home() {
   
@@ -146,6 +135,15 @@ export default function Home() {
   const [teamRankingData, setTeamRankingData] = useState<TeamRankingResponse[]>([]);
   const [loadingRanking, setLoadingRanking] = useState(true);
   const [rankingError, setRankingError] = useState<string | null>(null);
+  
+  // 월 범위 조절 관련 상태
+  const [monthRangeIndex, setMonthRangeIndex] = useState(0);
+  const [monthsPerView] = useState(4); // 한 번에 보여줄 월 수
+  
+  // 득점 비율 관련 상태
+  const [goalStatsData, setGoalStatsData] = useState<GoalStatsResponse | null>(null);
+  const [loadingGoalStats, setLoadingGoalStats] = useState(true);
+  const [goalStatsError, setGoalStatsError] = useState<string | null>(null);
   
   // 경기결과 관련
   const [itemsPerPage, setItemsPerPage] = useState(6);
@@ -176,67 +174,15 @@ export default function Home() {
       try {
         setLoadingRanking(true);
         
-        // 테스트용 Mock 데이터 - 실제 API 호출 대신 사용
-        const mockData: TeamRankingResponse[] = [
-          {
-            team_id: "ulsan",
-            season_id: 2026,
-            monthly: [
-              { data_period: "2026-02", expected_rank: 3, team_rating: 78.2, expected_winrate: 0.58, expected_goals: 1.6, schedule_difficulty: 0.45 },
-              { data_period: "2026-03", expected_rank: 2, team_rating: 79.5, expected_winrate: 0.62, expected_goals: 1.7, schedule_difficulty: 0.38 },
-              { data_period: "2026-04", expected_rank: 1, team_rating: 81.3, expected_winrate: 0.65, expected_goals: 1.8, schedule_difficulty: 0.35 },
-              { data_period: "2026-05", expected_rank: 2, team_rating: 80.9, expected_winrate: 0.61, expected_goals: 1.7, schedule_difficulty: 0.42 },
-              { data_period: "2026-06", expected_rank: 3, team_rating: 79.8, expected_winrate: 0.59, expected_goals: 1.6, schedule_difficulty: 0.48 }
-            ]
-          },
-          {
-            team_id: "pohang",
-            season_id: 2026,
-            monthly: [
-              { data_period: "2026-02", expected_rank: 5, team_rating: 75.1, expected_winrate: 0.52, expected_goals: 1.4, schedule_difficulty: 0.52 },
-              { data_period: "2026-03", expected_rank: 4, team_rating: 76.8, expected_winrate: 0.55, expected_goals: 1.5, schedule_difficulty: 0.45 },
-              { data_period: "2026-04", expected_rank: 3, team_rating: 78.2, expected_winrate: 0.58, expected_goals: 1.6, schedule_difficulty: 0.42 },
-              { data_period: "2026-05", expected_rank: 4, team_rating: 77.5, expected_winrate: 0.56, expected_goals: 1.5, schedule_difficulty: 0.46 },
-              { data_period: "2026-06", expected_rank: 5, team_rating: 76.3, expected_winrate: 0.53, expected_goals: 1.4, schedule_difficulty: 0.51 }
-            ]
-          },
-          {
-            team_id: "jeonbuk",
-            season_id: 2026,
-            monthly: [
-              { data_period: "2026-02", expected_rank: 1, team_rating: 82.4, expected_winrate: 0.67, expected_goals: 1.9, schedule_difficulty: 0.32 },
-              { data_period: "2026-03", expected_rank: 1, team_rating: 83.1, expected_winrate: 0.69, expected_goals: 2.0, schedule_difficulty: 0.30 },
-              { data_period: "2026-04", expected_rank: 2, team_rating: 81.8, expected_winrate: 0.66, expected_goals: 1.9, schedule_difficulty: 0.33 },
-              { data_period: "2026-05", expected_rank: 1, team_rating: 82.7, expected_winrate: 0.68, expected_goals: 1.9, schedule_difficulty: 0.31 },
-              { data_period: "2026-06", expected_rank: 1, team_rating: 83.5, expected_winrate: 0.70, expected_goals: 2.1, schedule_difficulty: 0.28 }
-            ]
-          },
-          {
-            team_id: "seoul",
-            season_id: 2026,
-            monthly: [
-              { data_period: "2026-02", expected_rank: 8, team_rating: 71.3, expected_winrate: 0.45, expected_goals: 1.2, schedule_difficulty: 0.58 },
-              { data_period: "2026-03", expected_rank: 7, team_rating: 72.5, expected_winrate: 0.48, expected_goals: 1.3, schedule_difficulty: 0.55 },
-              { data_period: "2026-04", expected_rank: 6, team_rating: 73.8, expected_winrate: 0.50, expected_goals: 1.4, schedule_difficulty: 0.52 },
-              { data_period: "2026-05", expected_rank: 7, team_rating: 72.9, expected_winrate: 0.47, expected_goals: 1.3, schedule_difficulty: 0.54 },
-              { data_period: "2026-06", expected_rank: 6, team_rating: 74.2, expected_winrate: 0.51, expected_goals: 1.4, schedule_difficulty: 0.50 }
-            ]
-          }
-        ];
-        
-        // 실제 API 호출 (주석 처리)
-        /*
         const teams = ['ulsan', 'pohang', 'jeonbuk', 'seoul'];
         const promises = teams.map(async (teamId) => {
-          const res = await fetch(`/api/season/2026/teams/${teamId}/monthly-rank`);
+          const res = await fetch(`/api/team.php?season_id=2026&team_id="${teamId}"`);
           if (!res.ok) throw new Error(`${teamId} 팀 순위 데이터 조회 실패`);
           return res.json();
         });
         
         const data = await Promise.all(promises);
-        */
-        
-        setTeamRankingData(mockData);
+        setTeamRankingData(data);
       } catch (e) {
         setRankingError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
       } finally {
@@ -245,6 +191,43 @@ export default function Home() {
     };
 
     fetchTeamRankingData();
+  }, []);
+
+  // 득점 비율 데이터 API 호출
+  useEffect(() => {
+    const fetchGoalStatsData = async () => {
+      try {
+        setLoadingGoalStats(true);
+        
+        const res = await fetch('/api/analysis/olap.php?season_id=2026');
+        if (!res.ok) throw new Error('득점 통계 데이터 조회 실패');
+        const data = await res.json();
+        
+        // OLAP 데이터를 GoalStatsResponse 형식으로 변환
+        const teamData = data.data.find((item: any) => item.position === 'SUBTOTAL' && item.team_name !== 'TOTAL');
+        const totalData = data.data.find((item: any) => item.team_name === 'TOTAL');
+        const fwData = data.data.find((item: any) => item.position === 'FW');
+        const mfData = data.data.find((item: any) => item.position === 'MF');
+        
+        if (teamData && totalData && fwData && mfData) {
+          const goalStats: GoalStatsResponse = {
+            league_total_goals: totalData.total_goals,
+            team_total_goals: teamData.total_goals,
+            midfielder_goals: mfData.total_goals,
+            forward_goals: fwData.total_goals
+          };
+          setGoalStatsData(goalStats);
+        } else {
+          throw new Error('필요한 득점 데이터를 찾을 수 없습니다');
+        }
+      } catch (e) {
+        setGoalStatsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
+      } finally {
+        setLoadingGoalStats(false);
+      }
+    };
+
+    fetchGoalStatsData();
   }, []);
 
   // 차트 데이터 준비 함수
@@ -256,7 +239,14 @@ export default function Home() {
       });
     });
     
-    return Array.from(allMonths).sort().map(month => {
+    const sortedMonths = Array.from(allMonths).sort();
+    
+    // 현재 보여줄 월 범위 계산
+    const startIndex = monthRangeIndex * monthsPerView;
+    const endIndex = Math.min(startIndex + monthsPerView, sortedMonths.length);
+    const visibleMonths = sortedMonths.slice(startIndex, endIndex);
+    
+    return visibleMonths.map(month => {
       const monthData: any = { month: month.substring(5) }; // "2026-05" -> "05"
       teamRankingData.forEach(team => {
         const monthDataForTeam = team.monthly.find(m => m.data_period === month);
@@ -264,6 +254,70 @@ export default function Home() {
       });
       return monthData;
     });
+  };
+
+  // 월 범위 조절 함수들
+  const getAllMonths = () => {
+    const allMonths = new Set<string>();
+    teamRankingData.forEach(team => {
+      team.monthly.forEach(month => {
+        allMonths.add(month.data_period);
+      });
+    });
+    return Array.from(allMonths).sort();
+  };
+
+  const getMaxRangeIndex = () => {
+    const allMonths = getAllMonths();
+    return Math.ceil(allMonths.length / monthsPerView) - 1;
+  };
+
+  const handleNextMonthRange = () => {
+    const maxIndex = getMaxRangeIndex();
+    if (monthRangeIndex < maxIndex) {
+      setMonthRangeIndex(monthRangeIndex + 1);
+    }
+  };
+
+  const handlePrevMonthRange = () => {
+    if (monthRangeIndex > 0) {
+      setMonthRangeIndex(monthRangeIndex - 1);
+    }
+  };
+
+  const getCurrentRangeText = () => {
+    const allMonths = getAllMonths();
+    const startIndex = monthRangeIndex * monthsPerView;
+    const endIndex = Math.min(startIndex + monthsPerView - 1, allMonths.length - 1);
+    
+    const startMonth = allMonths[startIndex]?.substring(5) || '';
+    const endMonth = allMonths[endIndex]?.substring(5) || '';
+    
+    return `${startMonth}월 - ${endMonth}월`;
+  };
+
+  // 득점 비율 차트 데이터 준비 함수
+  const prepareGoalRatioData = () => {
+    if (!goalStatsData) return [];
+    
+    const { league_total_goals, team_total_goals, midfielder_goals, forward_goals } = goalStatsData;
+    
+    // 우리 팀 득점 외의 리그 득점
+    const other_teams_goals = league_total_goals - team_total_goals;
+    
+    // 퍼센트로 변환
+    const other_teams_percent = (other_teams_goals / league_total_goals) * 100;
+    const forward_percent = (forward_goals / league_total_goals) * 100;
+    const midfielder_percent = (midfielder_goals / league_total_goals) * 100;
+    
+    return [
+      {
+        name: '리그 득점',
+        '리그 전체 득점': other_teams_percent,
+        'FW 득점': forward_percent,
+        'MF 득점': midfielder_percent,
+      },
+    ];
   };
 
   // 팀별 색상
@@ -325,7 +379,30 @@ export default function Home() {
             </h1>
           </Card>
           <Card className="bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">팀별 순위 추이</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">팀별 순위 추이</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 font-medium">{getCurrentRangeText()}</span>
+                <div className="flex gap-2">
+                  <button
+                    aria-label="이전 월 범위"
+                    onClick={handlePrevMonthRange}
+                    disabled={monthRangeIndex === 0}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-sm text-gray-600 hover:border-gray-400 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    aria-label="다음 월 범위"
+                    onClick={handleNextMonthRange}
+                    disabled={monthRangeIndex >= getMaxRangeIndex()}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-sm text-gray-600 hover:border-gray-400 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            </div>
             {loadingRanking ? (
               <div className="flex h-64 items-center justify-center text-gray-500">
                 데이터 로딩 중...
@@ -366,30 +443,75 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* 메뉴 네비게이션 */}
-        <section>
-          <div className="flex justify-center items-center overflow-x-auto bg-white gap-10 py-2">
-            {featureItems.map(({ label, path }) => (
-              <LinkButton
-                key={label}
-                href={path}
-                variant="ghost"
-                className="p-0"
-              >
-                <Card
-                  noPadding
-                  className="flex min-w-[50px] flex-col items-center gap-1 py-1 hover:bg-gray-100 transition"
-                >
-                  <div className="h-14 w-14 rounded-2xl bg-gray-200" />
-                  <span className="text-xs font-medium text-gray-700">
-                    {label}
-                  </span>
-                </Card>
-              </LinkButton>
-            ))}
-          </div>
+        {/* 득점 비율 분석 */}
+        <section className="grid gap-4 lg:grid-cols-1">
+          <Card className="bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">득점 비율 분석</h2>
+            {loadingGoalStats ? (
+              <div className="flex h-64 items-center justify-center text-gray-500">
+                데이터 로딩 중...
+              </div>
+            ) : goalStatsError ? (
+              <div className="flex h-64 items-center justify-center text-red-500">
+                {goalStatsError}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600">리그 전체 득점</div>
+                    <div className="text-xl font-bold text-gray-900">{goalStatsData?.league_total_goals || 0}</div>
+                  </div>
+                  <div className="text-center p-3 bg-emerald-50 rounded-lg">
+                    <div className="text-sm text-gray-600">우리 팀 득점</div>
+                    <div className="text-xl font-bold text-emerald-600">{goalStatsData?.team_total_goals || 0}</div>
+                  </div>
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-gray-600">미드필더 득점</div>
+                    <div className="text-xl font-bold text-blue-600">{goalStatsData?.midfielder_goals || 0}</div>
+                  </div>
+                  <div className="text-center p-3 bg-amber-50 rounded-lg">
+                    <div className="text-sm text-gray-600">공격수 득점</div>
+                    <div className="text-xl font-bold text-amber-600">{goalStatsData?.forward_goals || 0}</div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={prepareGoalRatioData()}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name"
+                      tick={{ fontSize: 14 }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      label={{ value: '득점 비율 (%)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="리그 전체 득점" 
+                      stackId="a"
+                      fill="#e5e7eb"
+                    />
+                    <Bar 
+                      dataKey="FW 득점" 
+                      stackId="b"
+                      fill="#f59e0b"
+                    />
+                    <Bar 
+                      dataKey="MF 득점" 
+                      stackId="b"
+                      fill="#3b82f6"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </Card>
         </section>
-
+        
         {/* 경기 결과 */}
         {/* Mock 데이터 */}
         <section className="space-y-6">
