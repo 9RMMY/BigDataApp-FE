@@ -3,22 +3,29 @@
 import { useEffect, useState } from "react";
 
 export default function StrategyPage() {
+  const [teamId, setTeamId] = useState("");       // 💚 우리팀 추가
   const [opponent, setOpponent] = useState("");
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [result, setResult] = useState<{
     expected_points: number;
     win_prob: number;
     draw_prob: number;
     loss_prob: number;
-    strategy_impacts: { strategy: string; delta_expected_points: number; note: string }[];
+    strategy_impacts: {
+      strategy: string;
+      delta_expected_points: number;
+      note: string;
+    }[];
   } | null>(null);
 
   const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
 
-  const isReady = opponent && date;
+  // 우리팀 + 상대팀 + 날짜 모두 선택 시 가능
+  const isReady = teamId && opponent && date;
 
-  // 팀 목록 로드 (상대팀 선택용)
+  // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -26,9 +33,7 @@ export default function StrategyPage() {
         if (!res.ok) return;
         const data = await res.json();
         setTeams(data);
-      } catch (e) {
-        // ignore
-      }
+      } catch (_) {}
     };
     fetchTeams();
   }, []);
@@ -40,24 +45,22 @@ export default function StrategyPage() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/simulations/match", {
+      const res = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          match_id: "match-1", // TODO: 실제 경기 ID로 교체 가능
-          home_team_id: "home-team", // 필요 시 수정
+          match_date: date,
+          home_team_id: teamId,      // 💚 이제 정상 전달
           away_team_id: opponent,
           strategy: "attack_focus",
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("API Error");
-      }
+      if (!res.ok) throw new Error("API Error");
 
       const data = await res.json();
       setResult(data);
-    } catch (e) {
+    } catch (_) {
       setResult(null);
     }
 
@@ -66,18 +69,35 @@ export default function StrategyPage() {
 
   return (
     <div className="flex flex-1 bg-white flex-col md:flex-row">
-
-      {/* Left Sidebar: Trade 페이지와 동일 구조 */}
+      
+      {/* Left Sidebar */}
       <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start mr-4">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
           STRATEGY
         </h1>
       </div>
 
-      {/* Right Content */}
+      {/* Main Content */}
       <div className="flex-1 p-6 bg-white flex flex-col">
+
         {/* Controls */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
+
+          {/* 우리팀 선택 */}
+          <select
+            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            value={teamId}
+            onChange={(e) => setTeamId(e.target.value)}
+          >
+            <option value="">우리팀 선택</option>
+            {teams.map((t) => (
+              <option key={t.team_id} value={t.team_id}>
+                {t.team_name}
+              </option>
+            ))}
+          </select>
+
+          {/* 상대팀 선택 */}
           <select
             className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
             value={opponent}
@@ -91,6 +111,7 @@ export default function StrategyPage() {
             ))}
           </select>
 
+          {/* 날짜 선택 */}
           <input
             type="date"
             className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
@@ -98,9 +119,10 @@ export default function StrategyPage() {
             onChange={(e) => setDate(e.target.value)}
           />
 
+          {/* 실행 버튼 */}
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-full sm:w-auto ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
-              }`}
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-full sm:w-auto 
+              ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"}`}
             onClick={handleExecute}
             disabled={!isReady}
           >
@@ -108,10 +130,10 @@ export default function StrategyPage() {
           </button>
         </div>
 
-        {/* 안내 문구 */}
+        {/* 안내 */}
         {!loading && !result && (
           <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
-            상대팀과 일정을 선택한 뒤 실행 버튼을 눌러주세요.
+            우리팀/상대팀/날짜 선택 후 실행해 주세요.
           </div>
         )}
 

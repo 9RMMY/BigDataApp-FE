@@ -22,24 +22,24 @@ export default function TradeSimulator() {
   const isReadyToTrade = leftTeam1 && leftTeam2 && rightTeam1 && rightTeam2;
 
 
-useEffect(() => {
-  const fetchTeams = async () => {
-    try {
-      const res = await fetch("/api/meta/teams");
-      if (!res.ok) return;
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const res = await fetch("/api/meta/teams");
+        if (!res.ok) return;
 
-      const data = await res.json() as { team_id: string; team_name: string }[];
+        const data = await res.json() as { team_id: string; team_name: string }[];
 
-      const uniqueTeams = Array.from(new Map(data.map(t => [t.team_id, t])).values());
+        const uniqueTeams = Array.from(new Map(data.map(t => [t.team_id, t])).values());
 
-      setTeams(uniqueTeams);
-    } catch (e) {
-      console.error("팀 목록 로드 실패", e);
-    }
-  };
+        setTeams(uniqueTeams);
+      } catch (e) {
+        console.error("팀 목록 로드 실패", e);
+      }
+    };
 
-  fetchTeams();
-}, []);
+    fetchTeams();
+  }, []);
 
   // ===============================
   // 🔵 왼쪽 팀 선수 로드
@@ -105,7 +105,7 @@ useEffect(() => {
     setResult(null);
 
     try {
-      const res = await fetch("/api/trades/simulate", {
+      const res = await fetch("/api/simulations/trade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,6 +115,7 @@ useEffect(() => {
           players_b: [rightTeam2],
         }),
       });
+
 
       if (!res.ok) throw new Error("API response not OK");
 
@@ -146,7 +147,7 @@ useEffect(() => {
       {/* Main Content */}
       <div className="flex-1 p-6 flex flex-col">
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
-          
+
           {/* 왼쪽 팀 */}
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
@@ -178,9 +179,8 @@ useEffect(() => {
 
           {/* Trade 버튼 */}
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${
-              isReadyToTrade ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${isReadyToTrade ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
+              }`}
             onClick={handleTrade}
             disabled={!isReadyToTrade}
           >
