@@ -33,101 +33,26 @@ type GoalStatsResponse = {
   forward_goals: number;
 };
 
-const featureItems = [
-  { label: "선수분석", path: "/player" },
-  { label: "MVP & 베스트11", path: "/mvp" },
-  { label: "트레이드", path: "/trade" },
-  { label: "영입방출", path: "/transfer" },
-  { label: "라인업", path: "/lineup" },
-  { label: "전략제안", path: "/strategy" },
-  { label: "설명", path: "/playermanage" },
-];
+type Team = {
+  team_id: string;
+  team_name: string;
+};
 
-// 경기결과 MOCK 데이터
-const matchResults = [
-  {
-    id: 1,
-    date: "11월 23일 토요일",
-    stadium: "울산문수축구경기장 14:00",
-    home: "울산 현대",
-    away: "전북 현대",
-    score: "2 - 1",
-  },
-  {
-    id: 2,
-    date: "11월 23일 토요일",
-    stadium: "포항스틸야드 16:30",
-    home: "포항 스틸러스",
-    away: "제주 유나이티드",
-    score: "3 - 0",
-  },
-  {
-    id: 3,
-    date: "11월 24일 일요일",
-    stadium: "전주월드컵경기장 14:00",
-    home: "전북 현대",
-    away: "강원 FC",
-    score: "1 - 1",
-  },
-  {
-    id: 4,
-    date: "11월 24일 일요일",
-    stadium: "서울월드컵경기장 16:30",
-    home: "FC 서울",
-    away: "대구 FC",
-    score: "2 - 3",
-  },
-  {
-    id: 5,
-    date: "11월 30일 토요일",
-    stadium: "수원월드컵경기장 14:00",
-    home: "수원 삼성",
-    away: "인천 유나이티드",
-    score: "1 - 0",
-  },
-  {
-    id: 6,
-    date: "11월 30일 토요일",
-    stadium: "광주축구전용경기장 16:30",
-    home: "광주 FC",
-    away: "김천 상무",
-    score: "2 - 2",
-  },
-  {
-    id: 7,
-    date: "12월 1일 일요일",
-    stadium: "대전월드컵경기장 14:00",
-    home: "대전 하나",
-    away: "울산 현대",
-    score: "0 - 2",
-  },
-  {
-    id: 8,
-    date: "12월 1일 일요일",
-    stadium: "창원축구센터 16:30",
-    home: "포항 스틸러스",
-    away: "FC 서울",
-    score: "1 - 1",
-  },
-  {
-    id: 9,
-    date: "12월 7일 토요일",
-    stadium: "전주월드컵경기장 14:00",
-    home: "전북 현대",
-    away: "대구 FC",
-    score: "3 - 1",
-  },
-  {
-    id: 10,
-    date: "12월 7일 토요일",
-    stadium: "제주월드컵경기장 16:30",
-    home: "제주 유나이티드",
-    away: "강원 FC",
-    score: "2 - 0",
-  },
-];
+type MatchResult = {
+  match_date: string;
+  opponent: string;
+  result: string;
+  score_us: number;
+  score_opponent: number;
+  is_home: boolean;
+};
 
 export default function Home() {
+  
+  // 팀 목록 관련 상태
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
   
   // 팀 순위 예측 관련 상태
   const [teamRankingData, setTeamRankingData] = useState<TeamRankingResponse[]>([]);
@@ -144,6 +69,9 @@ export default function Home() {
   const [goalStatsError, setGoalStatsError] = useState<string | null>(null);
   
   // 경기결과 관련
+  const [matchResultsData, setMatchResultsData] = useState<MatchResult[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [matchesError, setMatchesError] = useState<string | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -166,16 +94,37 @@ export default function Home() {
     setCurrentIndex(0);
   }, [itemsPerPage]);
 
+  // 팀 목록 API 호출
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        setLoadingTeams(true);
+        const res = await fetch('/api/meta/teams.php');
+        if (!res.ok) throw new Error('팀 목록 조회 실패');
+        const data = await res.json();
+        setTeams(data);
+      } catch (e) {
+        setTeamsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+
+    fetchTeams();
+  }, []);
+
   // 팀 순위 예측 데이터 API 호출
   useEffect(() => {
     const fetchTeamRankingData = async () => {
       try {
         setLoadingRanking(true);
         
-        const teams = ['ulsan', 'pohang', 'jeonbuk', 'seoul'];
-        const promises = teams.map(async (teamId) => {
-          const res = await fetch(`/api/team.php?season_id=2026&team_id="${teamId}"`);
-          if (!res.ok) throw new Error(`${teamId} 팀 순위 데이터 조회 실패`);
+        // 팀 목록이 로드된 후에 순위 데이터 호출
+        if (teams.length === 0) return;
+        
+        const promises = teams.map(async (team) => {
+          const res = await fetch(`/api/team.php?season_id=2026&team_id="${team.team_id}"`);
+          if (!res.ok) throw new Error(`${team.team_id} 팀 순위 데이터 조회 실패`);
           return res.json();
         });
         
@@ -188,8 +137,10 @@ export default function Home() {
       }
     };
 
-    fetchTeamRankingData();
-  }, []);
+    if (teams.length > 0) {
+      fetchTeamRankingData();
+    }
+  }, [teams]);
 
   // 득점 비율 데이터 API 호출
   useEffect(() => {
@@ -226,6 +177,25 @@ export default function Home() {
     };
 
     fetchGoalStatsData();
+  }, []);
+
+  // 최근 경기 결과 API 호출
+  useEffect(() => {
+    const fetchMatchResults = async () => {
+      try {
+        setLoadingMatches(true);
+        const res = await fetch('/api/match/recent.php?limit=12');
+        if (!res.ok) throw new Error('최근 경기 결과 조회 실패');
+        const data = await res.json();
+        setMatchResultsData(data);
+      } catch (e) {
+        setMatchesError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+
+    fetchMatchResults();
   }, []);
 
   // 차트 데이터 준비 함수
@@ -326,21 +296,51 @@ export default function Home() {
 
   // 팀 이름 변환
   const getTeamName = (teamId: string) => {
-    const teamNames: Record<string, string> = {
-      'ulsan': '울산 현대',
-      'pohang': '포항 스틸러스',
-      'jeonbuk': '전북 현대',
-      'seoul': 'FC 서울'
-    };
-    return teamNames[teamId] || teamId;
+    const team = teams.find(t => t.team_id === teamId);
+    return team?.team_name || teamId;
+  };
+
+  // 경기 결과 포맷팅 함수
+  const formatMatchDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const weekday = weekdays[date.getDay()];
+    return `${month}월 ${day}일 ${weekday}요일`;
+  };
+
+  const formatMatchTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const getResultText = (result: string) => {
+    switch (result) {
+      case 'W': return '승';
+      case 'D': return '무';
+      case 'L': return '패';
+      default: return result;
+    }
+  };
+
+  const getResultColor = (result: string) => {
+    switch (result) {
+      case 'W': return 'bg-green-100 text-green-700';
+      case 'D': return 'bg-gray-100 text-gray-700';
+      case 'L': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
   };
 
   const maxIndex = Math.max(
     0,
-    Math.ceil(matchResults.length / itemsPerPage - 1) * itemsPerPage
+    Math.ceil(matchResultsData.length / itemsPerPage - 1) * itemsPerPage
   );
 
-  const visibleMatches = matchResults.slice(
+  const visibleMatches = matchResultsData.slice(
     currentIndex,
     currentIndex + itemsPerPage
   );
@@ -366,19 +366,19 @@ export default function Home() {
         
 
         {/* 메인 대시보드 */}
-        {/* TODO: 그래프 연결 */}
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
           <Card className="bg-white shadow-sm">
-            <span className="text-lg font-medium text-emerald-600">K리그</span>
-            <h1 className="mt-3 text-4xl font-bold leading-snug text-gray-900 sm:text-5xl">
+            <span className="text-2xl font-medium text-emerald-600">K리그</span>
+            <h1 className="mt-3 text-4xl font-semibold leading-snug text-gray-900 sm:text-4xl">
               2026년
               <br />
               월별 예측 순위
             </h1>
           </Card>
+
           <Card className="bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">팀별 순위 추이</h2>
+              <h2 className="text-xl font-semibold text-gray-900">팀별 순위 추이</h2>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600 font-medium">{getCurrentRangeText()}</span>
                 <div className="flex gap-2">
@@ -444,7 +444,7 @@ export default function Home() {
         {/* 득점 비율 분석 */}
         <section className="grid gap-4 lg:grid-cols-1">
           <Card className="bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">득점 비율 분석</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">득점 비율 분석</h2>
             {loadingGoalStats ? (
               <div className="flex h-64 items-center justify-center text-gray-500">
                 데이터 로딩 중...
@@ -511,7 +511,6 @@ export default function Home() {
         </section>
         
         {/* 경기 결과 */}
-        {/* Mock 데이터 */}
         <section className="space-y-6">
           {/* 경기 결과 header */}
           <div className="flex items-center justify-between">
@@ -538,53 +537,63 @@ export default function Home() {
           </div>
 
           {/* 경기 결과 detail */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {visibleMatches.map((match) => (
-              <Card
-                key={match.id}
-                className="relative space-y-1 border-gray-200 bg-white"
-              >
-                {/* 상단 배경 영역 */}
-                <div className="bg-emerald-600 px-4 py-2 flex justify-center rounded-tl-lg rounded-tr-lg">
-                  <span className="text-md font-semibold text-white">
-                    {match.date}
-                  </span>
-                </div>
-
-                {/* 경기요약 + 경기장 */}
-                <div className="flex items-center justify-between pl-2 pr-2 py-2">
-                  <span className="rounded-full bg-rose-200 px-3 py-1 text-xs font-semibold text-rose-600">
-                    경기요약
-                  </span>
-
-                  <div className="pl-2 text-sm font-medium text-gray-500">
-                    {match.stadium}
-                  </div>
-                </div>
-
-                {/* 홈 - 스코어 - 어웨이 */}
-                <div className="flex items-start justify-between pl-4 pr-4">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-14 w-14 rounded-xl bg-gray-200" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {match.home}
+          {loadingMatches ? (
+            <div className="flex h-64 items-center justify-center text-gray-500">
+              데이터 로딩 중...
+            </div>
+          ) : matchesError ? (
+            <div className="flex h-64 items-center justify-center text-red-500">
+              {matchesError}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visibleMatches.map((match, index) => (
+                <Card
+                  key={`${match.match_date}-${index}`}
+                  className="relative space-y-1 border-gray-200 bg-white"
+                >
+                  {/* 상단 배경 영역 */}
+                  <div className="bg-emerald-600 px-4 py-2 flex justify-center rounded-tl-lg rounded-tr-lg">
+                    <span className="text-md font-semibold text-white">
+                      {formatMatchDate(match.match_date)}
                     </span>
                   </div>
 
-                  <div className="flex h-8 w-14 items-center justify-center mt-4 rounded-full bg-gray-200 text-base font-semibold text-gray-700">
-                    {match.score}
+                  {/* 경기결과 + 시간 */}
+                  <div className="flex items-center justify-between pl-2 pr-2 py-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getResultColor(match.result)}`}>
+                      {getResultText(match.result)}
+                    </span>
+
+                    <div className="pl-2 text-sm font-medium text-gray-500">
+                      {formatMatchTime(match.match_date)}
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-14 w-14 rounded-xl bg-gray-200" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {match.away}
-                    </span>
+                  {/* 홈 - 스코어 - 어웨이 */}
+                  <div className="flex items-start justify-between pl-4 pr-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="h-14 w-14 rounded-xl bg-gray-200" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {match.is_home ? '전북 현대' : match.opponent}
+                      </span>
+                    </div>
+
+                    <div className="flex h-8 w-14 items-center justify-center mt-4 rounded-full bg-gray-200 text-base font-semibold text-gray-700">
+                      {match.score_us} - {match.score_opponent}
+                    </div>
+
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="h-14 w-14 rounded-xl bg-gray-200" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {!match.is_home ? '전북 현대' : match.opponent}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
