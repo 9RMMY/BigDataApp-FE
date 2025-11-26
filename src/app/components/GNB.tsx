@@ -38,20 +38,20 @@ const GNB = () => {
             MVP & 베스트 11
           </LinkButton>
           <div className="hidden h-4 w-px bg-white/50 sm:block" />
-          <LinkButton href="/trade" variant="ghost" className="px-0">
-            트레이드
-          </LinkButton>
-          <div className="hidden h-4 w-px bg-white/50 sm:block" />
-          <LinkButton href="/transfer" variant="ghost" className="px-0">
-            영입방출
+          <LinkButton href="/strategy" variant="ghost" className="px-0">
+            전략제안
           </LinkButton>
           <div className="hidden h-4 w-px bg-white/50 sm:block" />
           <LinkButton href="/lineup" variant="ghost" className="px-0">
             라인업
           </LinkButton>
           <div className="hidden h-4 w-px bg-white/50 sm:block" />
-          <LinkButton href="/strategy" variant="ghost" className="px-0">
-            전략제안
+          <LinkButton href="/trade" variant="ghost" className="px-0">
+            트레이드
+          </LinkButton>
+          <div className="hidden h-4 w-px bg-white/50 sm:block" />
+          <LinkButton href="/transfer" variant="ghost" className="px-0">
+            영입방출
           </LinkButton>
           <div className="hidden h-4 w-px bg-white/50 sm:block" />
           <LinkButton href="/playermanage" variant="ghost" className="px-0">
