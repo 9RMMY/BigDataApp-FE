@@ -59,13 +59,12 @@ export default function TransferCalculator() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/simulations/transfer", {
+      const res = await fetch("/api/player.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          team_id: team,
-          player_in_id: player,
-          type: actionType, 
+          action: actionType,
+          player_id: player,
         }),
       });
 
@@ -75,9 +74,24 @@ export default function TransferCalculator() {
 
       const actionKor = actionType === "acquire" ? "영입" : "방출";
 
-      setResult(
-        `${team} 팀의 선수 ${player} ${actionKor} 완료! (예상 승점 변화: ${data.expected_points_change}, 팀 평점: ${data.new_team_rating})`
-      );
+      if (!data.success) throw new Error("API Error");
+
+      let message: string | undefined = data.message;
+
+      if (!message) {
+        const newTeamId = data.new_team_id ?? team;
+        const teamName =
+          (teams.find((t) => t.team_id === newTeamId)?.team_name as string | undefined) ??
+          newTeamId ??
+          team;
+
+        message =
+          actionType === "acquire"
+            ? `${teamName} 팀으로 선수 ${player} ${actionKor}이 완료되었습니다.`
+            : `선수 ${player} ${actionKor}이 완료되었습니다.`;
+      }
+
+      setResult(message);
     } catch (e) {
       setResult("에러 발생!");
     }
