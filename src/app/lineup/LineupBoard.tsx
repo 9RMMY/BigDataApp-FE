@@ -44,10 +44,13 @@ export default function LineupBoard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           team_id: teamId,
-          formation,
-          opponent_team_id: opponent,
+          formation: formation,
+          opponent_team_id: opponent
         }),
       });
+
+
+
 
       if (!res.ok) {
         throw new Error("API Error");
@@ -123,11 +126,10 @@ export default function LineupBoard() {
           </select>
 
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${
-              isReady
-                ? "bg-primary hover:bg-primary/80"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${isReady
+              ? "bg-primary hover:bg-primary/80"
+              : "bg-gray-400 cursor-not-allowed"
+              }`}
             onClick={handleRecommend}
             disabled={!isReady}
           >
