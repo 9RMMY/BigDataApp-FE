@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Card from "./components/Card";
-import GNB from "./components/GNB";
-import LinkButton from "./components/buttons/LinkButton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useMemo } from "react";
 

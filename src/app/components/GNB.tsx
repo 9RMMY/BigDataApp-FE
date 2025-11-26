@@ -6,14 +6,15 @@ import LinkButton from "./buttons/LinkButton";
 const GNB = () => {
   return (
     <header className="text-white shadow-md">
-      <nav className="bg-primary mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-8 lg:px-10">
+      <nav className="bg-primary flex h-12 w-full items-center justify-between px-8 lg:px-10">
         {/* logo */}
-        <Link href="/" className="flex items-center">
-          <div className="flex h-12 w-12 items-center justify-center text-lg font-bold tracking-tight">
-            SocccerSight
-          </div>
-        </Link>
-
+        <div className="flex items-center gap-6 text-sm font-medium">
+          <Link href="/" className="flex items-center">
+            <div className="text-2xl font-bold tracking-tight">
+              SocccerSight
+            </div>
+          </Link>
+        </div>
         {/* login & sign up */}
         <div className="flex items-center gap-4 text-sm font-medium">
           <LinkButton href="/login" variant="ghost" className="px-0">
@@ -27,7 +28,7 @@ const GNB = () => {
       </nav>
 
       {/* 전체 네비게이션 */}
-      <nav className="bg-black mx-auto flex h-12 w-full max-w-7xl items-center justify-between px-8 lg:px-10">
+      <nav className="bg-black flex h-12 w-full items-center justify-between px-8 lg:px-10">
         <div className="flex items-center gap-4 text-sm font-medium">
           <LinkButton href="/player" variant="ghost" className="px-0">
             선수분석
