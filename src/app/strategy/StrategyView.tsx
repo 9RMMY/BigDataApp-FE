@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function StrategyPage() {
-  const [teamId, setTeamId] = useState("");       // 💚 우리팀 추가
+  const [teamId, setTeamId] = useState("");   
   const [opponent, setOpponent] = useState("");
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ export default function StrategyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           match_date: date,
-          home_team_id: teamId,      // 💚 이제 정상 전달
+          home_team_id: teamId,  
           away_team_id: opponent,
           strategy: "attack_focus",
         }),
