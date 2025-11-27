@@ -30,7 +30,7 @@ export default function PlayerManage() {
     const fetchTeams = async () => {
       try {
         setLoadingTeams(true);
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch("/api/meta/teams.php");
         if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
         const data: Team[] = await res.json();
         setTeams(data);
@@ -53,7 +53,7 @@ export default function PlayerManage() {
 
       try {
         setLoadingPlayers(true);
-        const res = await fetch(`/api/meta/players?team_id=${selectedTeamId}`);
+        const res = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
         if (!res.ok) throw new Error("선수 정보를 불러오지 못했습니다.");
         const data: Player[] = await res.json();
         setPlayers(data);
@@ -69,12 +69,15 @@ export default function PlayerManage() {
 
   const handleRelease = async (playerId: string) => {
     try {
-      const res = await fetch("/api/myteam/release/", {
+      const res = await fetch("/api/player.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ player_id: playerId }),
+        body: JSON.stringify({ 
+          action: "release",
+          player_id: playerId 
+        }),
       });
 
       if (!res.ok) {
@@ -84,7 +87,7 @@ export default function PlayerManage() {
       const result = await res.json();
       if (result.success) {
         setPlayers((prev) => prev.filter((p) => p.player_id !== playerId));
-        alert("선수 방출이 완료되었습니다.");
+        alert(result.message || "선수 방출이 완료되었습니다.");
       }
     } catch (err) {
       alert(err instanceof Error ? err.message : "선수 방출 중 오류가 발생했습니다.");
@@ -93,17 +96,20 @@ export default function PlayerManage() {
 
   const handleRecruit = async () => {
     if (!searchName.trim()) {
-      alert("선수 이름을 입력하세요.");
+      alert("선수 ID를 입력하세요.");
       return;
     }
 
     try {
-      const res = await fetch("/api/myteam/acquire/", {
+      const res = await fetch("/api/player.php", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ player_id: searchName.trim() }),
+        body: JSON.stringify({ 
+          action: "acquire",
+          player_id: searchName.trim() 
+        }),
       });
 
       if (!res.ok) {
@@ -112,13 +118,13 @@ export default function PlayerManage() {
 
       const result = await res.json();
       if (result.success) {
-        alert("선수 영입이 완료되었습니다.");
+        alert(result.message || "선수 영입이 완료되었습니다.");
         setSearchName("");
         setSearchPosition("");
         
         // Refresh players list if my team is selected
         if (selectedTeamId === myTeamId) {
-          const refreshRes = await fetch(`/api/meta/players?team_id=${selectedTeamId}`);
+          const refreshRes = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
           if (refreshRes.ok) {
             const data: Player[] = await refreshRes.json();
             setPlayers(data);

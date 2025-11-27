@@ -55,17 +55,17 @@ export default function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto p-4">
+      <main className="container mx-auto pt-8">
         {/* Filter Section */}
         <section className="mb-0">
           <div className="flex flex-wrap gap-4 justify-end">
             {/* 포지션 필터 */}
             <div className="w-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 포지션 필터
               </label>
               <select
-                className="p-2 border rounded-md"
+                className="p-2 border rounded-md text-sm"
                 value={selectedPosition}
                 onChange={(e) => setSelectedPosition(e.target.value)}
               >
@@ -79,11 +79,11 @@ export default function PlayerPage() {
 
             {/* 성장률 */}
             <div className="w-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 성장률 지표
               </label>
               <select
-                className="p-2 border rounded-md"
+                className="p-2 border rounded-md text-sm"
                 value={metric}
                 onChange={(e) => setMetric(e.target.value)}
               >
@@ -95,7 +95,7 @@ export default function PlayerPage() {
 
             {/* 검색 */}
             <div className="w-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 선수 검색
               </label>
               <div className="relative">
@@ -105,7 +105,7 @@ export default function PlayerPage() {
                 <input
                   type="text"
                   placeholder="선수 이름을 검색하세요"
-                  className="w-40 sm:w-48 md:w-56 p-2 pl-10 border rounded-md"
+                  className="w-40 sm:w-72 md:w-72 p-2 pl-10 border rounded-md"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -119,19 +119,19 @@ export default function PlayerPage() {
 
         {/* 선수 목록 */}
         {!loading && (
-          <section className="bg-white rounded-lg shadow-sm overflow-hidden mt-4">
+          <section className="bg-white rounded-lg shadow-sm overflow-hidden mt-8">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       순위
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       이름
                     </th>
                     <th
-                      className="px-6 py-3 cursor-pointer hover:bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      className="px-6 py-3 cursor-pointer hover:bg-gray-100 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                       onClick={() =>
                         setSortOrder(sortOrder === "desc" ? "asc" : "desc")
                       }
@@ -160,7 +160,7 @@ export default function PlayerPage() {
                     <tr>
                       <td
                         colSpan={3}
-                        className="px-6 py-4 text-center text-gray-500"
+                        className="px-6 py-4 text-sm text-center text-gray-500"
                       >
                         검색 결과가 없습니다.
                       </td>

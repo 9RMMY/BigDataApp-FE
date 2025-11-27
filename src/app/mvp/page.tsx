@@ -9,7 +9,6 @@ type MVPCandidate = {
 };
 
 type MVPResponse = {
-  team_id: string;
   season: number;
   candidates: MVPCandidate[];
 };
@@ -41,7 +40,8 @@ export default function MVPPage() {
   useEffect(() => {
     async function fetchMvpCandidates() {
       try {
-        const res = await fetch("/api/season/2026/mvp-candidates");
+        const res = await fetch("/api/mvp.php?season_id=2026");
+        if (!res.ok) throw new Error("MVP 후보 데이터 조회 실패");
         const data: MVPResponse = await res.json();
 
         setMvpCandidates(data.candidates);
@@ -58,7 +58,8 @@ export default function MVPPage() {
   useEffect(() => {
     async function fetchBest11() {
       try {
-        const res = await fetch("/api/season/2026/best11");
+        const res = await fetch("/api/best11.php?season_id=2026");
+        if (!res.ok) throw new Error("Best11 데이터 조회 실패");
         const data: Best11Response = await res.json();
         setBest11(data.best11);
       } catch (err) {
