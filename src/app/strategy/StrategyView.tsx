@@ -25,11 +25,14 @@ export default function StrategyPage() {
   // 우리팀 + 상대팀 + 날짜 모두 선택 시 가능
   const isReady = teamId && opponent && date;
 
+  const API = process.env.NEXT_PUBLIC_API_URL;
+
+
   // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch(`${API}/meta/teams`);
         if (!res.ok) return;
         const data = await res.json();
         setTeams(data);
@@ -45,7 +48,7 @@ export default function StrategyPage() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/match", {
+      const res = await fetch(`${API}/match`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

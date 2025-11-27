@@ -17,11 +17,13 @@ export default function TransferCalculator() {
 
   const isReady = team && player && actionType;
 
+  const API = process.env.NEXT_PUBLIC_API_URL;
+
   // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch(`${API}/meta/teams`);
         if (!res.ok) return;
         const data = await res.json();
         setTeams(data);
@@ -39,7 +41,7 @@ export default function TransferCalculator() {
         return;
       }
       try {
-        const res = await fetch(`/api/meta/players?team_id=${team}`);
+        const res = await fetch(`${API}/meta/players?team_id=${team}`); 
         if (!res.ok) return;
         const data = await res.json();
         setPlayers(data);
@@ -59,7 +61,7 @@ export default function TransferCalculator() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/player.php", {
+      const res = await fetch(`${API}/simulations/transfer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

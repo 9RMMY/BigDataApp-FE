@@ -16,11 +16,12 @@ export default function LineupBoard() {
 
   const isReady = teamId && formation && opponent;
 
+  const API = process.env.NEXT_PUBLIC_API_URL;
   // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch(`${API}/meta/teams`);
         if (!res.ok) return;
         const data = await res.json();
         setTeams(data);
@@ -39,7 +40,7 @@ export default function LineupBoard() {
     setLineup([]);
 
     try {
-      const res = await fetch("/api/lineup/recommendation", {
+      const res = await fetch(`${API}/lineup/recommendation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
