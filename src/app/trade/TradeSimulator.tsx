@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+const JEONBUK_ID = 10;
+const JEONBUK_NAME = "전북 현대 모터스";
+
+
 type SimulationLog = {
   log_id: number;
   type: "acquire" | "release" | "trade";
-  team_id?: string;
-  player_in_id?: string;
+  team_id?: number;
+  player_in_id?: number;
   expected_points_change?: number;
   new_team_rating?: number;
-  team_a_id?: string;
-  team_b_id?: string;
-  players_a?: string[];
-  players_b?: string[];
+  team_a_id?: number;
+  team_b_id?: number;
+  players_a?: number[];
+  players_b?: number[];
   delta?: {
     [teamId: string]: {
       attack: number;
@@ -21,19 +26,21 @@ type SimulationLog = {
   };
 };
 
+
 export default function TradeSimulator() {
-  const [leftTeam1, setLeftTeam1] = useState("");
+  const [leftTeam1, setLeftTeam1] = useState(JEONBUK_ID); // 우리팀 고정
   const [leftTeam2, setLeftTeam2] = useState("");
-  const [rightTeam1, setRightTeam1] = useState("");
+  const [rightTeam1, setRightTeam1] = useState<number | "">("");
   const [rightTeam2, setRightTeam2] = useState("");
 
-  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+  const [teams, setTeams] = useState<{ team_id: number; team_name: string }[]>([]);
   const [leftPlayers, setLeftPlayers] = useState<
-    { player_id: string; player_name: string; position: string; team_id: string }[]
+    { player_id: number; player_name: string; position: string; team_id: number }[]
   >([]);
   const [rightPlayers, setRightPlayers] = useState<
-    { player_id: string; player_name: string; position: string; team_id: string }[]
+    { player_id: number; player_name: string; position: string; team_id: number }[]
   >([]);
+
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -50,14 +57,15 @@ export default function TradeSimulator() {
   const isReadyToTrade = leftTeam1 && leftTeam2 && rightTeam1 && rightTeam2;
 
   const API = process.env.NEXT_PUBLIC_API_URL;
-
+  console.log("🔥 API_BASE =", API);
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch(`${API}/meta/teams`);
+        console.log("🔵 GET TEAMS URL =", `${API}/api/meta/teams.php`);
+        const res = await fetch(`${API}/api/meta/teams.php`);
         if (!res.ok) return;
 
-        const data = await res.json() as { team_id: string; team_name: string }[];
+        const data = await res.json() as { team_id: number; team_name: string }[];
 
         const uniqueTeams = Array.from(new Map(data.map(t => [t.team_id, t])).values());
 
@@ -73,7 +81,8 @@ export default function TradeSimulator() {
   useEffect(() => {
     const fetchSimulationLogs = async () => {
       try {
-        const res = await fetch("/api/simulations/log.php");
+        const res = await fetch(`${API}/api/simulations/log.php`);
+
         if (!res.ok) return;
 
         const data = (await res.json()) as SimulationLog[];
@@ -104,9 +113,9 @@ export default function TradeSimulator() {
 
           return {
             id: log.log_id,
-            leftTeam: log.team_a_id as string,
+            leftTeam: String(log.team_a_id),
             leftPlayer: (log.players_a ?? []).join(", "),
-            rightTeam: log.team_b_id as string,
+            rightTeam: String(log.team_b_id),
             rightPlayer: (log.players_b ?? []).join(", "),
             summary,
             timestamp: new Date(),
@@ -134,7 +143,8 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`${API}/meta/players?team_id=${leftTeam1}`);
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${leftTeam1}`);
+
         if (!res.ok) return;
 
         const data = await res.json();
@@ -161,7 +171,8 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`${API}/meta/players?team_id=${rightTeam1}`);
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${rightTeam1}`)
+
         if (!res.ok) return;
 
         const data = await res.json();
@@ -186,14 +197,15 @@ export default function TradeSimulator() {
     setResult(null);
 
     try {
-      const res = await fetch(`${API}/simulations/trade`, {
+      const res = await fetch(`${API}/api/simulations/trade.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           team_a_id: leftTeam1,
           team_b_id: rightTeam1,
-          players_a: [leftTeam2],
-          players_b: [rightTeam2],
+          players_a: [Number(leftTeam2)],
+          players_b: [Number(rightTeam2)],
+
         }),
       });
 
@@ -206,20 +218,28 @@ export default function TradeSimulator() {
         ok: true,
         message: `${data.summary} (log_id: ${data.log_id})`,
       });
-      
+
       // 트레이드 히스토리에 기록
-      const leftTeamName = teams.find(t => t.team_id === leftTeam1)?.team_name || leftTeam1;
-      const rightTeamName = teams.find(t => t.team_id === rightTeam1)?.team_name || rightTeam1;
-      const leftPlayerName = leftPlayers.find(p => p.player_id === leftTeam2)?.player_name || leftTeam2;
-      const rightPlayerName = rightPlayers.find(p => p.player_id === rightTeam2)?.player_name || rightTeam2;
-      
+      const leftTeamName = JEONBUK_NAME;
+      const rightTeamName = String(
+        teams.find(t => t.team_id === Number(rightTeam1))?.team_name ?? rightTeam1
+      );
+
+      const leftPlayerName = String(
+        leftPlayers.find(p => p.player_id === Number(leftTeam2))?.player_name ?? leftTeam2
+      );
+
+      const rightPlayerName = String(
+        rightPlayers.find(p => p.player_id === Number(rightTeam2))?.player_name ?? rightTeam2
+      );
+
       setTradeHistory(prev => [{
         id: data.log_id,
         leftTeam: leftTeamName,
         leftPlayer: leftPlayerName,
         rightTeam: rightTeamName,
         rightPlayer: rightPlayerName,
-        summary: data.summary,
+        summary: String(data.summary),
         timestamp: new Date()
       }, ...prev]);
     } catch (err) {
@@ -231,8 +251,8 @@ export default function TradeSimulator() {
 
   const handleDeleteTradeLog = async (logId: number) => {
     try {
-      const res = await fetch(`/api/simulations/log.php?log_id=${logId}`, {
-        method: "DELETE",
+      const res = await fetch(`${API}/api/simulations/log.php?log_id=${logId}`, {
+        method: "DELETE"
       });
 
       if (res.status === 204 || res.ok) {
@@ -263,15 +283,11 @@ export default function TradeSimulator() {
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={leftTeam1}
-            onChange={(e) => setLeftTeam1(e.target.value)}
+            disabled
           >
-            <option value="">팀 선택</option>
-            {teams.map((t) => (
-              <option key={t.team_id} value={t.team_id}>
-                {t.team_name}
-              </option>
-            ))}
+            <option value={JEONBUK_ID}>{JEONBUK_NAME}</option>
           </select>
+
 
           {/* 왼쪽 선수 */}
           <select
@@ -302,7 +318,7 @@ export default function TradeSimulator() {
           <select
             className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
             value={rightTeam1}
-            onChange={(e) => setRightTeam1(e.target.value)}
+            onChange={(e) => setRightTeam1(Number(e.target.value))}
           >
             <option value="">팀 선택</option>
             {teams.map((t) => (
@@ -350,7 +366,7 @@ export default function TradeSimulator() {
             </div>
           </div>
         )}
-        
+
         {/* 트레이드 히스토리 */}
         {tradeHistory.length > 0 && (
           <div className="mt-6">
