@@ -21,11 +21,12 @@ export default function TradeSimulator() {
 
   const isReadyToTrade = leftTeam1 && leftTeam2 && rightTeam1 && rightTeam2;
 
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch("/api/meta/teams");
+        const res = await fetch(`${API}/meta/teams`);
         if (!res.ok) return;
 
         const data = await res.json() as { team_id: string; team_name: string }[];
@@ -53,7 +54,7 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`/api/meta/players?team_id=${leftTeam1}`);
+        const res = await fetch(`${API}/meta/players?team_id=${leftTeam1}`);
         if (!res.ok) return;
 
         const data = await res.json();
@@ -80,7 +81,7 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`/api/meta/players?team_id=${rightTeam1}`);
+        const res = await fetch(`${API}/meta/players?team_id=${rightTeam1}`);
         if (!res.ok) return;
 
         const data = await res.json();
@@ -105,7 +106,7 @@ export default function TradeSimulator() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/simulations/trade", {
+      const res = await fetch(`${API}/simulations/trade`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
