@@ -17,51 +17,33 @@ export default function LineupBoard() {
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
-  // -----------------------------
-  //  K리그 팀 + 선수 풀 (자동 생성)
-  // -----------------------------
-  const K_LEAGUE_TEAMS = [
-    { team_id: "ulsan", team_name: "울산 HD" },
-    { team_id: "jeonbuk", team_name: "전북 현대" },
-    { team_id: "fcseoul", team_name: "FC 서울" },
-    { team_id: "daegu", team_name: "대구 FC" },
-  ];
-
-  const K_LEAGUE_PLAYERS: any = {
-    ulsan: {
-      DF: ["김영권", "박용우", "서영재", "정승현"],
-      MF: ["이청용", "바코", "원두재"],
-      FW: ["주니오", "레오나르도", "고명진"],
-    },
-    jeonbuk: {
-      DF: ["홍정호", "김문환", "박진섭"],
-      MF: ["송민규", "백승호", "박규현", "문선민", "이수빈"],
-      FW: ["구스타보", "티아고"],
-    },
-    fcseoul: {
-      DF: ["이상민", "황현수", "김주성", "고요한"],
-      MF: ["팔라시오스", "기성용", "나상호", "오스마르"],
-      FW: ["황의조", "조영욱"],
-    },
-  };
 
   useEffect(() => {
-    // 실제 API
-    /*
     const fetchTeams = async () => {
       try {
-        const res = await fetch(`${API}/meta/teams`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setTeams(data);
-      } catch (e) {}
-    };
-    fetchTeams();
-    */
+        console.log("🔵 API 호출 시도:", `${API}/api/meta/teams.php`);
 
-    // 하드코딩된 팀 설정
-    setTeams(K_LEAGUE_TEAMS);
+        const res = await fetch(`${API}/api/meta/teams.php`);
+
+        console.log("🟡 응답 상태:", res.status);
+
+        if (!res.ok) {
+          console.log("❌ res.ok == false");
+          return;
+        }
+
+        const data = await res.json();
+        console.log("🟢 팀 데이터:", data);
+
+        setTeams(data);
+      } catch (e) {
+        console.log("🔥 API 호출 에러:", e);
+      }
+    };
+
+    fetchTeams();
   }, []);
+
 
   const formationNeeds: any = {
     "4-3-3": { DF: 4, MF: 3, FW: 3 },
@@ -135,9 +117,9 @@ export default function LineupBoard() {
     setLineup([]);
 
     // 실제 API
-    /*
+
     try {
-      const res = await fetch(`${API}/lineup/recommendation`, {
+      const res = await fetch(`${API}/api/lineup/recommendation.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -153,31 +135,6 @@ export default function LineupBoard() {
     } catch {
       setFitScore(null);
     }
-    */
-
-    // -----------------------------
-    //      하드코딩 라인업 생성
-    // -----------------------------
-    const needs = formationNeeds[formation];
-    const squad = K_LEAGUE_PLAYERS[teamId];
-
-    const picked: any[] = [];
-
-    ["DF", "MF", "FW"].forEach((pos) => {
-      const pool = squad[pos];
-      const count = needs[pos];
-
-      const selected = pool.slice(0, count).map((player: string) => ({
-        position: pos,
-        player,
-        fit_score: Math.random() * 0.3 + 0.7, // 70~100%
-      }));
-
-      picked.push(...selected);
-    });
-
-    setFitScore(0.85);
-    setLineup(picked);
 
     setLoading(false);
   };
