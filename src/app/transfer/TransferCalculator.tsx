@@ -5,7 +5,6 @@ import React, { useEffect, useState } from "react";
 export default function TransferCalculator() {
   const [team, setTeam] = useState("");
   const [player, setPlayer] = useState("");
-  const [actionType, setActionType] = useState<"acquire" | "release">("acquire");
 
   const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
   const [players, setPlayers] = useState<
@@ -15,44 +14,88 @@ export default function TransferCalculator() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
-  const isReady = team && player && actionType;
+  const [transferLogs, setTransferLogs] = useState<{
+    log_id: number;
+    type: "acquire" | "release";
+    team_id: number;
+    player_in_id: number;
+    expected_points_change: number;
+    new_team_rating: number;
+  }[]>([]);
+
+  const isReady = team && player;
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
+  const actionType = team === "10" ? "release" : "acquire"; // ⭐ 자동 결정
+
+  // 팀 목록 로드
   // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
+      console.log("🔵 [TEAM API] 호출 시작");
+      console.log("🔧 API URL =", `${API}/api/meta/teams.php`);
+
       try {
-        const res = await fetch(`${API}/meta/teams`);
-        if (!res.ok) return;
+        const res = await fetch(`${API}/api/meta/teams.php`);
+        console.log("🟡 [TEAM API] 응답 status =", res.status);
+
+        if (!res.ok) {
+          console.log("❌ [TEAM API] res.ok = false");
+          return;
+        }
+
         const data = await res.json();
+        console.log("🟢 [TEAM API] 응답 데이터 =", data);
+
         setTeams(data);
-      } catch (e) {}
+      } catch (e) {
+        console.log("🔥 [TEAM API] 오류 =", e);
+      }
     };
+
     fetchTeams();
   }, []);
+
 
   // 팀 선택 시 해당 팀 선수 목록 로드
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!team) {
+        console.log("⛔ 팀이 선택되지 않아 선수 API 호출 안함");
         setPlayers([]);
         setPlayer("");
         return;
       }
+
+      console.log("🔵 [PLAYER API] 호출 시작");
+      console.log("📌 선택된 team =", team);
+      console.log("🔧 API URL =", `${API}/api/meta/players.php?team_id=${team}`);
+
       try {
-        const res = await fetch(`${API}/meta/players?team_id=${team}`); 
-        if (!res.ok) return;
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${team}`);
+        console.log("🟡 [PLAYER API] 응답 status =", res.status);
+
+        if (!res.ok) {
+          console.log("❌ [PLAYER API] res.ok = false");
+          return;
+        }
+
         const data = await res.json();
+        console.log("🟢 [PLAYER API] 응답 데이터 =", data);
+
         setPlayers(data);
         setPlayer("");
       } catch (e) {
+        console.log("🔥 [PLAYER API] 오류 =", e);
         setPlayers([]);
         setPlayer("");
       }
     };
+
     fetchPlayers();
   }, [team]);
+
 
   const handleTransfer = async () => {
     if (!isReady) return;
@@ -61,39 +104,44 @@ export default function TransferCalculator() {
     setResult(null);
 
     try {
-      const res = await fetch(`${API}/simulations/transfer`, {
+      // 1) 시뮬레이션 영향 계산
+      const resSim = await fetch(`${API}/api/simulations/transfer.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          team_id: Number(team),
+          player_in_id: Number(player),
+          type: actionType,
+        }),
+      });
+
+      if (!resSim.ok) throw new Error("Simulation API Error");
+      const simResult = await resSim.json();
+
+      // 2) 실제 선수 영입/방출 처리
+      const resApply = await fetch(`${API}/api/player.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: actionType,
-          player_id: player,
+          player_id: Number(player),
         }),
       });
 
-      if (!res.ok) throw new Error("API Error");
+      if (!resApply.ok) throw new Error("Player API Error");
+      const applyResult = await resApply.json();
 
-      const data = await res.json();
+      const playerName = players.find((p) => p.player_id === player)?.player_name || player;
 
-      const actionKor = actionType === "acquire" ? "영입" : "방출";
-
-      if (!data.success) throw new Error("API Error");
-
-      let message: string | undefined = data.message;
-
-      if (!message) {
-        const newTeamId = data.new_team_id ?? team;
-        const teamName =
-          (teams.find((t) => t.team_id === newTeamId)?.team_name as string | undefined) ??
-          newTeamId ??
-          team;
-
-        message =
-          actionType === "acquire"
-            ? `${teamName} 팀으로 선수 ${player} ${actionKor}이 완료되었습니다.`
-            : `선수 ${player} ${actionKor}이 완료되었습니다.`;
+      if (actionType === "acquire") {
+        setResult(
+          `✔ ${playerName} 선수를 전북 현대(TEAM 10)에 영입했습니다! (+${simResult.expected_points_change} 승점 예상)`
+        );
+      } else {
+        setResult(
+          `✔ ${playerName} 선수를 방출했습니다. (전력 변화: ${simResult.expected_points_change})`
+        );
       }
-
-      setResult(message);
     } catch (e) {
       setResult("에러 발생!");
     }
@@ -101,9 +149,56 @@ export default function TransferCalculator() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    const fetchLogs = async () => {
+      console.log("📘 [LOG API] GET 시작");
+
+      try {
+        const res = await fetch(`${API}/api/simulations/log.php`);
+        console.log("📘 [LOG API] status =", res.status);
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        const filtered = data.filter((log: any) =>
+          log.type === "acquire" || log.type === "release"
+        );
+
+        console.log("📘 [LOG API] 필터링된 영입/방출 로그 =", filtered);
+
+        setTransferLogs(filtered);
+      } catch (e) {
+        console.log("🔥 [LOG API] 오류 =", e);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
+
+  const handleDeleteLog = async (log_id: number) => {
+    console.log("🗑 [DELETE LOG] 요청 시작", log_id);
+
+    try {
+      const res = await fetch(`${API}/api/simulations/log.php?log_id=${log_id}`, {
+        method: "DELETE",
+      });
+
+      console.log("🗑 [DELETE LOG] status =", res.status);
+
+      if (res.ok || res.status === 204) {
+        setTransferLogs((prev) => prev.filter((l) => l.log_id !== log_id));
+      }
+    } catch (e) {
+      console.log("🔥 [DELETE LOG] 오류 =", e);
+    }
+  };
+
+
   return (
     <div className="flex flex-1 bg-white flex-col md:flex-row">
-      
+
       {/* Sidebar */}
       <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start mr-4">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
@@ -146,44 +241,21 @@ export default function TransferCalculator() {
             ))}
           </select>
 
-          {/* 영입 / 방출 선택 UI */}
-          <div className="flex gap-3 items-center text-xs sm:text-sm">
-            <label className="flex items-center gap-1">
-              <input
-                type="radio"
-                value="acquire"
-                checked={actionType === "acquire"}
-                onChange={() => setActionType("acquire")}
-              />
-              영입
-            </label>
-            <label className="flex items-center gap-1">
-              <input
-                type="radio"
-                value="release"
-                checked={actionType === "release"}
-                onChange={() => setActionType("release")}
-              />
-              방출
-            </label>
-          </div>
-
-          {/* 실행 버튼 */}
+          {/* 실행 버튼 (자동 영입/방출) */}
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[130px] sm:w-auto ${
-              isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm w-[130px]
+              ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"}`}
             onClick={handleTransfer}
             disabled={!isReady}
           >
-            실행
+            {actionType === "acquire" ? "영입" : "방출"}
           </button>
         </div>
 
         {/* 안내 */}
         {!loading && !result && (
           <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
-            팀 / 선수 / 영입·방출을 선택한 뒤 실행 버튼을 눌러주세요.
+            팀 / 선수 선택 후 실행 버튼을 눌러주세요.
           </div>
         )}
 
@@ -203,9 +275,47 @@ export default function TransferCalculator() {
           </div>
         )}
 
+
+        {/* 시뮬레이션 로그 */}
+        {transferLogs.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">📜 영입/방출 시뮬레이션 로그</h3>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {transferLogs.map((log) => {
+                const teamName = teams.find((t) => Number(t.team_id) === log.team_id)?.team_name ?? log.team_id;
+                const playerName = players.find((p) => Number(p.player_id) === log.player_in_id)?.player_name
+                  ?? log.player_in_id;
+
+                return (
+                  <div key={log.log_id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          [{log.type === "acquire" ? "영입" : "방출"}] {teamName} - {playerName}
+                        </div>
+
+                        <div className="text-xs text-gray-600 mt-1">
+                          승점 변화: {log.expected_points_change}
+                          / 새로운 팀 평점: {log.new_team_rating}
+                        </div>
+                      </div>
+
+                      <button
+                        className="ml-3 px-2 py-1 rounded bg-red-100 text-[11px] font-semibold text-red-600 hover:bg-red-200 border border-red-200"
+                        onClick={() => handleDeleteLog(log.log_id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
-
-

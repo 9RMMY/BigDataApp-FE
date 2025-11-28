@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function StrategyPage() {
-  const [teamId, setTeamId] = useState("");   
+  const [teamId, setTeamId] = useState("");
   const [opponent, setOpponent] = useState("");
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,7 @@ export default function StrategyPage() {
     }[];
   } | null>(null);
 
+
   const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
 
   // 우리팀 + 상대팀 + 날짜 모두 선택 시 가능
@@ -32,47 +33,86 @@ export default function StrategyPage() {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch(`${API}/meta/teams`);
-        if (!res.ok) return;
+        console.log("🔵 API 호출 시도:", `${API}/api/meta/teams.php`);
+
+        const res = await fetch(`${API}/api/meta/teams.php`);
+
+        console.log("🟡 응답 상태:", res.status);
+
+        if (!res.ok) {
+          console.log("❌ res.ok == false");
+          return;
+        }
+
         const data = await res.json();
+        console.log("🟢 팀 데이터:", data);
+
         setTeams(data);
-      } catch (_) {}
+      } catch (e) {
+        console.log("🔥 API 호출 에러:", e);
+      }
     };
+
     fetchTeams();
   }, []);
 
+
   const handleExecute = async () => {
-    if (!isReady) return;
+    if (!isReady) {
+      console.log("⛔ 실행 불가: teamId / opponent / date 중 하나가 비어 있음");
+      return;
+    }
+
+    console.log("🚀 실행 시작!");
+    console.log("🔧 API BASE URL:", API);
+    console.log("📡 요청 URL:", `${API}/api/match.php`);
+    console.log("📨 요청 바디:", {
+      match_date: date,
+      home_team_id: teamId,
+      away_team_id: opponent,
+      strategy: "attack_focus",
+    });
 
     setLoading(true);
     setResult(null);
 
     try {
-      const res = await fetch(`${API}/match`, {
+      const res = await fetch(`${API}/api/match.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           match_date: date,
-          home_team_id: teamId,  
+          home_team_id: teamId,
           away_team_id: opponent,
           strategy: "attack_focus",
         }),
       });
 
-      if (!res.ok) throw new Error("API Error");
+      console.log("📥 응답 상태:", res.status);
+
+      if (!res.ok) {
+        console.log("❌ res.ok === false → 응답 에러");
+        throw new Error("API Error");
+      }
 
       const data = await res.json();
+
+      console.log("🟢 응답 데이터:", data);
+
       setResult(data);
-    } catch (_) {
+    } catch (err) {
+      console.log("🔥 API 호출 오류:", err);
       setResult(null);
     }
 
+    console.log("🏁 실행 완료");
     setLoading(false);
   };
 
+
   return (
     <div className="flex flex-1 bg-white flex-col md:flex-row">
-      
+
       {/* Left Sidebar */}
       <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start mr-4">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
