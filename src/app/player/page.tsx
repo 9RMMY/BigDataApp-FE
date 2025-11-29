@@ -58,7 +58,7 @@ export default function PlayerPage() {
       <main className="container mx-auto pt-8">
         {/* Filter Section */}
         <section className="mb-0">
-          <div className="flex flex-wrap gap-4 justify-end">
+          <div className="flex fxlex-wrap gap-4 justify-end">
             {/* 포지션 필터 */}
             <div className="w-auto">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -88,8 +88,8 @@ export default function PlayerPage() {
                 onChange={(e) => setMetric(e.target.value)}
               >
                 <option value="rating_growth">전체 성장률</option>
-                <option value="goal_contribution_growth">공격포인트 성장</option>
-                <option value="pass_accuracy_growth">패스 성장률</option>
+                <option value="attack_growth">공격력</option>
+                <option value="defense_growth">수비력</option>
               </select>
             </div>
 
