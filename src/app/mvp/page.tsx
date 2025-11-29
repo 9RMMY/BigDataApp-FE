@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Card from "../components/Card";
+import { loadTeamSession } from "../../utils/teamSession";
 
 type MVPCandidate = {
   player: string;
@@ -24,8 +26,19 @@ type Best11Response = {
   best11: Best11Item[];
 };
 
+type Team = {
+  team_id: string;
+  team_name: string;
+};
+
 export default function MVPPage() {
   const API = process.env.NEXT_PUBLIC_API_URL;
+  
+  // 팀 정보 상태
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [myTeamId, setMyTeamId] = useState<string>("");
+  const [myTeamName, setMyTeamName] = useState<string>("");
+
   // MVP 상태
   const [mvpCandidates, setMvpCandidates] = useState<MVPCandidate[]>([]);
   const [loadingMvp, setLoadingMvp] = useState(true);
@@ -36,6 +49,16 @@ export default function MVPPage() {
 
   const [best11SearchQuery, setBest11SearchQuery] = useState("");
   const [best11SelectedPosition, setBest11SelectedPosition] = useState("");
+
+  // localStorage에서 팀 정보 불러오기
+  useEffect(() => {
+    const sessionData = loadTeamSession();
+    if (sessionData) {
+      setTeams(sessionData.teams);
+      setMyTeamId(sessionData.my_team_id);
+      setMyTeamName(sessionData.my_team_name);
+    }
+  }, []);
 
   // MVP API 호출
   useEffect(() => {
@@ -154,15 +177,12 @@ export default function MVPPage() {
                       MVP 후보 {index + 1}
                     </h3>
 
-                    <div className="flex gap-4">
-                      <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0" />
-                      <div className="flex-1 space-y-2 text-sm">
-                        <div className="font-medium text-gray-900">
-                          {candidate.player}
-                        </div>
-                        <div className="text-gray-600">
-                          예측 확률: {(candidate.probability * 100).toFixed(1)}%
-                        </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="font-medium text-gray-900">
+                        {candidate.player}
+                      </div>
+                      <div className="text-gray-600">
+                        예측 확률: {(candidate.probability * 100).toFixed(1)}%
                       </div>
                     </div>
                   </Card>
@@ -197,7 +217,7 @@ export default function MVPPage() {
                       }
                       className="px-4 py-2 bg-white rounded-lg border border-gray-300 text-sm"
                     >
-                      <option value="ALL">포지션 필터</option>
+                      <option value="ALL">전체 포지션</option>
                       <option value="FM">공격수(FW)</option>
                       <option value="MF">미드필더(MF)</option>
                       <option value="DF">수비수(DF)</option>
