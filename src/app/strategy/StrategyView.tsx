@@ -160,7 +160,7 @@ export default function StrategyPage() {
 
           {/* 우리팀 선택 */}
           <select
-            className="border p-1 rounded w-40 text-xs sm:text-sm"
+            className="border p-1 rounded w-44"
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
           >
@@ -174,7 +174,7 @@ export default function StrategyPage() {
 
           {/* 상대팀 선택 */}
           <select
-            className="border p-1 rounded w-40 text-xs sm:text-sm"
+            className="border p-1 rounded w-44"
             value={opponent}
             onChange={(e) => setOpponent(e.target.value)}
           >
@@ -189,7 +189,7 @@ export default function StrategyPage() {
           {/* 날짜 선택 */}
           <input
             type="date"
-            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-32 sm:w-36"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
@@ -237,7 +237,7 @@ export default function StrategyPage() {
               )}
             </div>
 
-            {/* 🎯 오른쪽 결과 텍스트 */}
+
             {/* 🎯 오른쪽 결과 텍스트 */}
             <div className="w-full md:w-2/3 p-6 bg-white border rounded-xl">
 
@@ -282,7 +282,6 @@ export default function StrategyPage() {
 
               </div>
 
-              {/* 전략 영향 */}
               {/* 전략 영향 */}
               <div className="mt-10">
                 <p className="font-semibold sm:text-base text-sm">전략 영향:</p>

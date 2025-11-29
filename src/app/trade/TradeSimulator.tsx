@@ -349,7 +349,7 @@ export default function TradeSimulator() {
 
           {/* 왼쪽 팀 */}
           <select
-            className="border p-1 rounded w-40 text-xs sm:text-sm"
+            className="border p-1 rounded w-44 "
             value={leftTeam1}
             disabled
           >
@@ -359,7 +359,7 @@ export default function TradeSimulator() {
 
           {/* 왼쪽 선수 */}
           <select
-            className="border p-1 rounded w-24 text-xs sm:text-sm"
+            className="border p-1 rounded w-24 "
             value={leftTeam2}
             onChange={(e) => setLeftTeam2(e.target.value)}
             disabled={!leftTeam1 || leftPlayers.length === 0}
@@ -384,7 +384,7 @@ export default function TradeSimulator() {
 
           {/* 오른쪽 팀 */}
           <select
-            className="border p-1 rounded w-40 text-xs sm:text-sm"
+            className="border p-1 rounded w-44 "
             value={rightTeam1}
             onChange={(e) => setRightTeam1(Number(e.target.value))}
           >
@@ -398,7 +398,7 @@ export default function TradeSimulator() {
 
           {/* 오른쪽 선수 */}
           <select
-            className="border p-1 rounded w-24 text-xs sm:text-sm"
+            className="border p-1 rounded w-24 "
             value={rightTeam2}
             onChange={(e) => setRightTeam2(e.target.value)}
             disabled={!rightTeam1 || rightPlayers.length === 0}
