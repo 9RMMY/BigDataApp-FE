@@ -4,6 +4,22 @@ import { useState, useEffect } from "react";
 import Card from "./components/Card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useMemo } from "react";
+import Image from "next/image";
+import anyangLogo from "./asset/anyang.svg";
+import daeguLogo from "./asset/daegu.svg";
+import daejeonLogo from "./asset/daejeon.svg";
+import gangwonLogo from "./asset/gangwon.svg";
+import gimcheonLogo from "./asset/gimcheon.svg";
+import gwangjuLogo from "./asset/gwangju.svg";
+import incheonLogo from "./asset/incheon.svg";
+import jejuLogo from "./asset/jeju.svg";
+import jeonbukLogo from "./asset/jeonbuk.svg";
+import pohangLogo from "./asset/pohang.svg";
+import seongnamLogo from "./asset/seongnam.svg";
+import seoulLogo from "./asset/seoul.svg";
+import suwonLogo from "./asset/suwon.svg";
+import suwonBlueLogo from "./asset/suwon_blue.svg";
+import ulsanLogo from "./asset/ulsan.svg";
 
 type MonthlyRankData = {
   data_period: string;
@@ -300,6 +316,35 @@ export default function Home() {
     return team?.team_name || teamId;
   };
 
+  const getHomeTeamName = (match: MatchResult) =>
+    match.is_home ? "전북 현대 모터스" : match.opponent;
+
+  const getAwayTeamName = (match: MatchResult) =>
+    !match.is_home ? "전북 현대 모터스" : match.opponent;
+
+  const getTeamLogoSrc = (teamName: string) => {
+    const name = teamName.toLowerCase();
+
+    if (name.includes("전북")) return jeonbukLogo;
+    if (name.includes("서울")) return seoulLogo;
+    if (name.includes("울산")) return ulsanLogo;
+    if (name.includes("포항")) return pohangLogo;
+    if (name.includes("강원")) return gangwonLogo;
+    if (name.includes("광주")) return gwangjuLogo;
+    if (name.includes("김천") || name.includes("상무")) return gimcheonLogo;
+    // 수원 FC / 수원 삼성 블루윙즈 분기
+    if (name.includes("블루윙즈") || name.includes("삼성")) return suwonBlueLogo;
+    if (name.includes("수원")) return suwonLogo;
+    if (name.includes("제주")) return jejuLogo;
+    if (name.includes("대구")) return daeguLogo;
+    if (name.includes("대전")) return daejeonLogo;
+    if (name.includes("인천")) return incheonLogo;
+    if (name.includes("성남")) return seongnamLogo;
+    if (name.includes("안양")) return anyangLogo;
+
+    return null;
+  };
+
   // 경기 결과 포맷팅 함수
   const formatMatchDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -573,9 +618,19 @@ export default function Home() {
                   {/* 홈 - 스코어 - 어웨이 */}
                   <div className="flex items-start justify-between pl-4 pr-4">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="h-14 w-14 rounded-xl bg-gray-200" />
+                      <div className="h-14 w-14 rounded-xl flex items-center justify-center overflow-hidden">
+                        {getTeamLogoSrc(getHomeTeamName(match)) && (
+                          <Image
+                            src={getTeamLogoSrc(getHomeTeamName(match))!}
+                            alt={getHomeTeamName(match)}
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                          />
+                        )}
+                      </div>
                       <span className="text-sm font-medium text-gray-700">
-                        {match.is_home ? '전북 현대' : match.opponent}
+                        {getHomeTeamName(match)}
                       </span>
                     </div>
 
@@ -584,9 +639,19 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-col items-center gap-2">
-                      <div className="h-14 w-14 rounded-xl bg-gray-200" />
+                      <div className="h-14 w-14 rounded-xl flex items-center justify-center overflow-hidden">
+                        {getTeamLogoSrc(getAwayTeamName(match)) && (
+                          <Image
+                            src={getTeamLogoSrc(getAwayTeamName(match))!}
+                            alt={getAwayTeamName(match)}
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                          />
+                        )}
+                      </div>
                       <span className="text-sm font-medium text-gray-700">
-                        {!match.is_home ? '전북 현대' : match.opponent}
+                        {getAwayTeamName(match)}
                       </span>
                     </div>
                   </div>
