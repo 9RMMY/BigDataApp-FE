@@ -62,7 +62,11 @@ export default function TradeSimulator() {
     const fetchTeams = async () => {
       try {
         console.log("🔵 GET TEAMS URL =", `${API}/api/meta/teams.php`);
-        const res = await fetch(`${API}/api/meta/teams.php`);
+        const res = await fetch(`${API}/api/meta/teams.php`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
         if (!res.ok) return;
 
         const data = await res.json() as { team_id: number; team_name: string }[];
@@ -81,7 +85,11 @@ export default function TradeSimulator() {
   useEffect(() => {
     const fetchSimulationLogs = async () => {
       try {
-        const res = await fetch(`${API}/api/simulations/log.php`);
+        const res = await fetch(`${API}/api/simulations/log.php`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
 
         if (!res.ok) return;
 
@@ -143,7 +151,11 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`${API}/api/meta/players.php?team_id=${leftTeam1}`);
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${leftTeam1}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
 
         if (!res.ok) return;
 
@@ -171,7 +183,11 @@ export default function TradeSimulator() {
       }
 
       try {
-        const res = await fetch(`${API}/api/meta/players.php?team_id=${rightTeam1}`)
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${rightTeam1}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        })
 
         if (!res.ok) return;
 
@@ -199,7 +215,11 @@ export default function TradeSimulator() {
     try {
       const res = await fetch(`${API}/api/simulations/trade.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420",
+
+        },
         body: JSON.stringify({
           team_a_id: leftTeam1,
           team_b_id: rightTeam1,
@@ -252,7 +272,10 @@ export default function TradeSimulator() {
   const handleDeleteTradeLog = async (logId: number) => {
     try {
       const res = await fetch(`${API}/api/simulations/log.php?log_id=${logId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+          "ngrok-skip-browser-warning": "69420",
+        },
       });
 
       if (res.status === 204 || res.ok) {
