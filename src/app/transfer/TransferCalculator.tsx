@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { JEONBUK_ID, JEONBUK_NAME } from "../constants/team";
 import { loadTeamSession } from "../../utils/teamSession";
-
 export default function TransferCalculator() {
   const [team, setTeam] = useState(String(JEONBUK_ID));
   const [player, setPlayer] = useState("");
@@ -31,27 +30,25 @@ export default function TransferCalculator() {
 
   const actionType = team === String(JEONBUK_ID) ? "release" : "acquire"; // ⭐ 자동 결정
 
-  // 팀 목록 로드
+  // 팀 목록 로드 (세션 우선)
   useEffect(() => {
     const loadTeams = async () => {
-      // 먼저 localStorage에서 데이터 확인
       const sessionData = loadTeamSession();
       if (sessionData) {
         setTeams(sessionData.teams);
+        setTeam(sessionData.my_team_id);
         return;
       }
 
-      // 세션 데이터 없으면 API 호출
       console.log("🔵 [TEAM API] 호출 시작");
       console.log("🔧 API URL =", `${API}/api/meta/teams.php`);
 
       try {
-        const res = await fetch(`${API}/api/meta/teams.php`,
-          {
-            headers: {
-              "ngrok-skip-browser-warning": "69420",
-            },
-          });
+        const res = await fetch(`${API}/api/meta/teams.php`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
 
         if (!res.ok) {
           console.log("❌ [TEAM API] res.ok = false");
@@ -59,7 +56,6 @@ export default function TransferCalculator() {
         }
 
         const data = await res.json();
-
         setTeams(data);
       } catch (e) {
         console.log("🔥 [TEAM API] 오류 =", e);

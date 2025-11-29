@@ -234,6 +234,17 @@ export default function TradeSimulator() {
       if (!res.ok) throw new Error("API response not OK");
 
       const data = await res.json();
+
+      console.log("📌 RAW DELTA FROM SERVER:", data.delta);
+      Object.entries(data.delta as Record<string, {
+        attack: number;
+        defense: number;
+        rating: number;
+      }>).forEach(([teamId, stats]) => {
+        console.log(
+          `▶ 팀 ${teamId}: 공격력 ${stats.attack}, 수비력 ${stats.defense}, 평균 전력 ${stats.rating}`
+        );
+      });
       const deltaText = makeDeltaText(data.delta, teams);
 
       setResult({
