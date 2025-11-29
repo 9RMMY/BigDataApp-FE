@@ -43,7 +43,12 @@ export default function PlayerPage() {
       console.log("🔍 요청 URL:", fullUrl);
 
       const res = await fetch(
-        query ? `${API}/api/player.php?${query}` : `${API}/api/player.php`
+        query ? `${API}/api/player.php?${query}` : `${API}/api/player.php`,
+        {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        }
       );
       console.log("📡 응답 status:", res.status);
       

@@ -36,7 +36,11 @@ export default function PlayerManage() {
         const url = `${API}/api/meta/teams.php`;
         console.log("🔍 팀 목록 요청 URL:", url);
         
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
         console.log("📡 팀 목록 응답 status:", res.status);
         
         if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
@@ -71,7 +75,11 @@ export default function PlayerManage() {
         const url = `${API}/api/meta/players.php?team_id=${selectedTeamId}`;
         console.log("🔍 선수 목록 요청 URL:", url);
         
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
         console.log("📡 선수 목록 응답 status:", res.status);
         
         if (!res.ok) throw new Error("선수 정보를 불러오지 못했습니다.");
@@ -102,6 +110,7 @@ export default function PlayerManage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({ 
           action: "release",
@@ -141,6 +150,7 @@ export default function PlayerManage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({ 
           action: "acquire",
@@ -167,7 +177,11 @@ export default function PlayerManage() {
           const refreshUrl = `${API}/api/meta/players.php?team_id=${selectedTeamId}`;
           console.log("🔍 새로고침 요청 URL:", refreshUrl);
           
-          const refreshRes = await fetch(refreshUrl);
+          const refreshRes = await fetch(refreshUrl, {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          });
           console.log("📡 새로고침 응답 status:", refreshRes.status);
           
           if (refreshRes.ok) {
