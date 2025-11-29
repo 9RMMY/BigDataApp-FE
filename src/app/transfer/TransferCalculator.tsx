@@ -46,8 +46,12 @@ export default function TransferCalculator() {
       console.log("🔧 API URL =", `${API}/api/meta/teams.php`);
 
       try {
-        const res = await fetch(`${API}/api/meta/teams.php`);
-        console.log("🟡 [TEAM API] 응답 status =", res.status);
+        const res = await fetch(`${API}/api/meta/teams.php`,
+          {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          });
 
         if (!res.ok) {
           console.log("❌ [TEAM API] res.ok = false");
@@ -55,7 +59,6 @@ export default function TransferCalculator() {
         }
 
         const data = await res.json();
-        console.log("🟢 [TEAM API] 응답 데이터 =", data);
 
         setTeams(data);
       } catch (e) {
@@ -71,19 +74,19 @@ export default function TransferCalculator() {
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!team) {
-        console.log("⛔ 팀이 선택되지 않아 선수 API 호출 안함");
         setPlayers([]);
         setPlayer("");
         return;
       }
 
-      console.log("🔵 [PLAYER API] 호출 시작");
-      console.log("📌 선택된 team =", team);
-      console.log("🔧 API URL =", `${API}/api/meta/players.php?team_id=${team}`);
-
       try {
-        const res = await fetch(`${API}/api/meta/players.php?team_id=${team}`);
-        console.log("🟡 [PLAYER API] 응답 status =", res.status);
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${team}`,
+          {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          });
+
 
         if (!res.ok) {
           console.log("❌ [PLAYER API] res.ok = false");
@@ -116,7 +119,10 @@ export default function TransferCalculator() {
       // 1) 시뮬레이션 영향 계산
       const resSim = await fetch(`${API}/api/simulations/transfer.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420"
+        },
         body: JSON.stringify({
           team_id: Number(team),
           player_in_id: Number(player),
@@ -130,7 +136,10 @@ export default function TransferCalculator() {
       // 2) 실제 선수 영입/방출 처리
       const resApply = await fetch(`${API}/api/player.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420"
+        },
         body: JSON.stringify({
           action: actionType,
           player_id: Number(player),
@@ -192,9 +201,10 @@ export default function TransferCalculator() {
     try {
       const res = await fetch(`${API}/api/simulations/log.php?log_id=${log_id}`, {
         method: "DELETE",
+        headers: {
+          "ngrok-skip-browser-warning": "69420"
+        },
       });
-
-      console.log("🗑 [DELETE LOG] status =", res.status);
 
       if (res.ok || res.status === 204) {
         setTransferLogs((prev) => prev.filter((l) => l.log_id !== log_id));
@@ -223,7 +233,7 @@ export default function TransferCalculator() {
 
           {/* 팀 선택 */}
           <select
-            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-44 "
             value={team}
             onChange={(e) => setTeam(e.target.value)}
           >
@@ -237,7 +247,7 @@ export default function TransferCalculator() {
 
           {/* 선수 선택 */}
           <select
-            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-24"
             value={player}
             onChange={(e) => setPlayer(e.target.value)}
             disabled={!team || players.length === 0}
@@ -252,7 +262,7 @@ export default function TransferCalculator() {
 
           {/* 실행 버튼 (자동 영입/방출) */}
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm w-[130px]
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm w-auto
               ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"}`}
             onClick={handleTransfer}
             disabled={!isReady}
