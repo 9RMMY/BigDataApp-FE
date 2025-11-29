@@ -20,6 +20,7 @@ import seoulLogo from "./asset/seoul.svg";
 import suwonLogo from "./asset/suwon.svg";
 import suwonBlueLogo from "./asset/suwon_blue.svg";
 import ulsanLogo from "./asset/ulsan.svg";
+import { JEONBUK_ID, JEONBUK_NAME } from "./constants/team";
 
 type MonthlyRankData = {
   data_period: string;
@@ -64,6 +65,7 @@ type MatchResult = {
 };
 
 export default function Home() {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   
   // 팀 목록 관련 상태
   const [teams, setTeams] = useState<Team[]>([]);
@@ -115,7 +117,7 @@ export default function Home() {
     const fetchTeams = async () => {
       try {
         setLoadingTeams(true);
-        const res = await fetch('/api/meta/teams.php');
+        const res = await fetch(`${API}/api/meta/teams.php`);
         if (!res.ok) throw new Error('팀 목록 조회 실패');
         const data = await res.json();
         setTeams(data);
@@ -139,7 +141,7 @@ export default function Home() {
         if (teams.length === 0) return;
         
         const promises = teams.map(async (team) => {
-          const res = await fetch(`/api/team.php?season_id=2026&team_id="${team.team_id}"`);
+          const res = await fetch(`${API}/api/team.php?season_id=2026&team_id="${team.team_id}"`);
           if (!res.ok) throw new Error(`${team.team_id} 팀 순위 데이터 조회 실패`);
           return res.json();
         });
@@ -164,7 +166,7 @@ export default function Home() {
       try {
         setLoadingGoalStats(true);
         
-        const res = await fetch('/api/analysis/olap.php?season_id=2026');
+        const res = await fetch(`${API}/api/analysis/olap.php?season_id=2026`);
         if (!res.ok) throw new Error('득점 통계 데이터 조회 실패');
         const data = await res.json();
         
@@ -200,7 +202,7 @@ export default function Home() {
     const fetchMatchResults = async () => {
       try {
         setLoadingMatches(true);
-        const res = await fetch('/api/match/recent.php?limit=12');
+        const res = await fetch(`${API}/api/match/recent.php?limit=12`);
         if (!res.ok) throw new Error('최근 경기 결과 조회 실패');
         const data = await res.json();
         setMatchResultsData(data);
@@ -332,7 +334,6 @@ export default function Home() {
     if (name.includes("강원")) return gangwonLogo;
     if (name.includes("광주")) return gwangjuLogo;
     if (name.includes("김천") || name.includes("상무")) return gimcheonLogo;
-    // 수원 FC / 수원 삼성 블루윙즈 분기
     if (name.includes("블루윙즈") || name.includes("삼성")) return suwonBlueLogo;
     if (name.includes("수원")) return suwonLogo;
     if (name.includes("제주")) return jejuLogo;
@@ -404,6 +405,7 @@ export default function Home() {
   }
 };
 
+// UI
 
   return (
     <div className="min-h-screen bg-gray-100">

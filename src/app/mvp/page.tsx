@@ -25,6 +25,7 @@ type Best11Response = {
 };
 
 export default function MVPPage() {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   // MVP 상태
   const [mvpCandidates, setMvpCandidates] = useState<MVPCandidate[]>([]);
   const [loadingMvp, setLoadingMvp] = useState(true);
@@ -39,14 +40,23 @@ export default function MVPPage() {
   // MVP API 호출
   useEffect(() => {
     async function fetchMvpCandidates() {
+      console.log("🏆 MVP API 호출 시작");
       try {
-        const res = await fetch("/api/mvp.php?season_id=2026");
+        const url = `${API}/api/mvp.php?season_id=2026`;
+        console.log("🔍 MVP 요청 URL:", url);
+        
+        const res = await fetch(url);
+        console.log("📡 MVP 응답 status:", res.status);
+        
         if (!res.ok) throw new Error("MVP 후보 데이터 조회 실패");
+        
         const data: MVPResponse = await res.json();
+        console.log("📋 MVP 응답 데이터:", data);
+        console.log("📊 MVP 후보 수:", data.candidates?.length);
 
         setMvpCandidates(data.candidates);
       } catch (err) {
-        console.error("MVP 후보 불러오기 실패:", err);
+        console.error("🔥 MVP 후보 불러오기 실패:", err);
       } finally {
         setLoadingMvp(false);
       }
@@ -57,13 +67,23 @@ export default function MVPPage() {
   // Best11 API 호출
   useEffect(() => {
     async function fetchBest11() {
+      console.log("⭐ Best11 API 호출 시작");
       try {
-        const res = await fetch("/api/best11.php?season_id=2026");
+        const url = `${API}/api/best11.php?season_id=2026`;
+        console.log("🔍 Best11 요청 URL:", url);
+        
+        const res = await fetch(url);
+        console.log("📡 Best11 응답 status:", res.status);
+        
         if (!res.ok) throw new Error("Best11 데이터 조회 실패");
+        
         const data: Best11Response = await res.json();
+        console.log("📋 Best11 응답 데이터:", data);
+        console.log("📊 Best11 선수 수:", data.best11?.length);
+
         setBest11(data.best11);
       } catch (err) {
-        console.error("Best11 불러오기 실패:", err);
+        console.error("🔥 Best11 불러오기 실패:", err);
       } finally {
         setLoadingBest11(false);
       }
@@ -120,7 +140,7 @@ export default function MVPPage() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
-                {mvpCandidates.map((candidate, index) => (
+                {mvpCandidates.slice(0, 3).map((candidate, index) => (
                   <Card key={index} className="bg-white p-6">
                     <h3 className="text-lg font-bold text-gray-900 mb-4">
                       MVP 후보 {index + 1}
@@ -169,11 +189,11 @@ export default function MVPPage() {
                       }
                       className="px-4 py-2 bg-white rounded-lg border border-gray-300 text-sm"
                     >
-                      <option value="">포지션 필터</option>
-                      <option value="공격수">공격수(FW)</option>
-                      <option value="미드필더">미드필더(MF)</option>
-                      <option value="수비수">수비수(DF)</option>
-                      <option value="골키퍼">골키퍼(GK)</option>
+                      <option value="ALL">포지션 필터</option>
+                      <option value="FM">공격수(FW)</option>
+                      <option value="MF">미드필더(MF)</option>
+                      <option value="DF">수비수(DF)</option>
+                      <option value="GK">골키퍼(GK)</option>
                     </select>
                   </div>
 
