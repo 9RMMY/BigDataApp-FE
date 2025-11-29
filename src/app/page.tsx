@@ -3,24 +3,24 @@
 import { useState, useEffect } from "react";
 import Card from "./components/Card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { useMemo } from "react";
 import Image from "next/image";
-import anyangLogo from "./asset/anyang.svg";
-import daeguLogo from "./asset/daegu.svg";
-import daejeonLogo from "./asset/daejeon.svg";
-import gangwonLogo from "./asset/gangwon.svg";
-import gimcheonLogo from "./asset/gimcheon.svg";
-import gwangjuLogo from "./asset/gwangju.svg";
-import incheonLogo from "./asset/incheon.svg";
-import jejuLogo from "./asset/jeju.svg";
-import jeonbukLogo from "./asset/jeonbuk.svg";
-import pohangLogo from "./asset/pohang.svg";
-import seongnamLogo from "./asset/seongnam.svg";
-import seoulLogo from "./asset/seoul.svg";
-import suwonLogo from "./asset/suwon.svg";
-import suwonBlueLogo from "./asset/suwon_blue.svg";
-import ulsanLogo from "./asset/ulsan.svg";
+import anyangLogo from "./asset/team_logo/anyang.svg";
+import daeguLogo from "./asset/team_logo/daegu.svg";
+import daejeonLogo from "./asset/team_logo/daejeon.svg";
+import gangwonLogo from "./asset/team_logo/gangwon.svg";
+import gimcheonLogo from "./asset/team_logo/gimcheon.svg";
+import gwangjuLogo from "./asset/team_logo/gwangju.svg";
+import incheonLogo from "./asset/team_logo/incheon.svg";
+import jejuLogo from "./asset/team_logo/jeju.svg";
+import jeonbukLogo from "./asset/team_logo/jeonbuk.svg";
+import pohangLogo from "./asset/team_logo/pohang.svg";
+import seongnamLogo from "./asset/team_logo/seongnam.svg";
+import seoulLogo from "./asset/team_logo/seoul.svg";
+import suwonLogo from "./asset/team_logo/suwon.svg";
+import suwonBlueLogo from "./asset/team_logo/suwon_blue.svg";
+import ulsanLogo from "./asset/team_logo/ulsan.svg";
 import { JEONBUK_ID, JEONBUK_NAME } from "./constants/team";
+import { saveTeamSession } from "../utils/teamSession";
 
 type MonthlyRankData = {
   data_period: string;
@@ -92,6 +92,9 @@ export default function Home() {
   const [matchesError, setMatchesError] = useState<string | null>(null);
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // 선택된 팀 상태
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   // 화면 크기 감지해서 itemsPerPage 조정
   useEffect(() => {
@@ -112,7 +115,7 @@ export default function Home() {
     setCurrentIndex(0);
   }, [itemsPerPage]);
 
-  // 팀 목록 API 호출
+  // 팀 목록 API 호출 및 세션 저장
   useEffect(() => {
     const fetchTeams = async () => {
       console.log("🏠 홈페이지 - 팀 목록 API 호출 시작");
@@ -134,6 +137,9 @@ export default function Home() {
         console.log("📊 팀 수:", data.length);
         
         setTeams(data);
+        
+        // localStorage에 팀 정보 저장
+        saveTeamSession(data, String(JEONBUK_ID), JEONBUK_NAME);
       } catch (e) {
         console.error("🔥 팀 목록 불러오기 실패:", e);
         setTeamsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
@@ -480,15 +486,10 @@ export default function Home() {
         
 
         {/* 메인 대시보드 */}
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
-          <Card className="bg-white shadow-sm">
-            <span className="text-2xl font-medium text-emerald-600">K리그</span>
-            <h1 className="mt-3 text-4xl font-semibold leading-snug text-gray-900 sm:text-4xl">
-              2026년
-              <br />
-              월별 예측 순위
+        <section className="space-y-6">
+            <h1 className="text-4xl font-semibold leading-snug text-gray-900 sm:text-4xl">
+              2026년 월별 예측 순위
             </h1>
-          </Card>
 
           <Card className="bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
@@ -524,7 +525,7 @@ export default function Home() {
                 {rankingError}
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={500}>
                 <LineChart data={prepareChartData()}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
@@ -536,19 +537,78 @@ export default function Home() {
                     domain={[1, 12]}
                     reversed
                   />
-                  <Tooltip />
-                  <Legend />
-                  {teamRankingData.map((team, index) => (
-                    <Line
-                      key={team.team_id}
-                      type="monotone"
-                      dataKey={team.team_id}
-                      stroke={getTeamColor(index)}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      name={getTeamName(team.team_id)}
-                    />
-                  ))}
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white p-2 border border-gray-300 rounded shadow-lg">
+                            {payload.map((entry, index) => (
+                              <div key={index} className="text-xs" style={{ color: entry.color }}>
+                                {entry.value}위 - {entry.name}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend 
+                    content={({ payload }) => {
+                      if (!payload) return null;
+                      // 팀 ID 순서로 정렬 (숫자로 변환하여 비교)
+                      const sortedPayload = [...payload].sort((a, b) => {
+                        const aTeamId = parseInt(a.value || '0');
+                        const bTeamId = parseInt(b.value || '0');
+                        return aTeamId - bTeamId;
+                      });
+                      return (
+                        <div className="flex flex-wrap gap-1 sm:gap-2 justify-center max-w-2xl mx-auto">
+                          {sortedPayload.map((entry, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                console.log('Team clicked:', entry.value);
+                                setSelectedTeam(entry.value === selectedTeam ? null : (entry.value || null));
+                              }}
+                              className="flex items-center gap-1 px-1 sm:px-2 py-1 text-xs border rounded hover:bg-gray-100 cursor-pointer transition-colors flex-shrink-0"
+                              style={{ color: entry.color }}
+                            >
+                              <div 
+                                className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0" 
+                                style={{ backgroundColor: entry.color }}
+                              />
+                              <span className="hidden xs:inline sm:inline">
+                                {getTeamName(entry.value || '')}
+                              </span>
+                              <span className="inline xs:hidden sm:hidden">
+                                {entry.value}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    }}
+                  />
+                  {teamRankingData.map((team, index) => {
+                    const isMyTeam = team.team_id === String(JEONBUK_ID);
+                    const isSelectedTeam = team.team_id === selectedTeam;
+                    return (
+                      <Line
+                        key={team.team_id}
+                        type="monotone"
+                        dataKey={team.team_id}
+                        stroke={
+                          isMyTeam ? getTeamColor(index) : 
+                          isSelectedTeam ? '#000000' : '#d1d5db'
+                        }
+                        strokeWidth={isMyTeam || isSelectedTeam ? 2 : 1}
+                        dot={{ r: isMyTeam || isSelectedTeam ? 4 : 3 }}
+                        name={getTeamName(team.team_id)}
+                        opacity={isMyTeam || isSelectedTeam ? 1 : 0.6}
+                      />
+                    );
+                  })}
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -678,10 +738,6 @@ export default function Home() {
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getResultColor(match.result)}`}>
                       {getResultText(match.result)}
                     </span>
-
-                    <div className="pl-2 text-sm font-medium text-gray-500">
-                      {formatMatchTime(match.match_date)}
-                    </div>
                   </div>
 
                   {/* 홈 - 스코어 - 어웨이 */}
