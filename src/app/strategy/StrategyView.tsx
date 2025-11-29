@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Pie } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 
 export default function StrategyPage() {
   const [teamId, setTeamId] = useState("");
@@ -20,6 +25,21 @@ export default function StrategyPage() {
     }[];
   } | null>(null);
 
+  const strategyToKorean = (s: string) => {
+    switch (s) {
+      case "attack_focus": return "공격 강화 시";
+      case "defense_focus": return "수비 강화 시";
+      case "balanced": return "균형 있게 경기할 시";
+      default: return s;
+    }
+  };
+  const coloredDelta = (value: number) => (
+    <span className={value >= 0 ? "text-red-600" : "text-blue-600"}>
+      {value >= 0 ? `+${value}` : value}
+    </span>
+  );
+
+
 
   const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
 
@@ -27,17 +47,37 @@ export default function StrategyPage() {
   const isReady = teamId && opponent && date;
 
   const API = process.env.NEXT_PUBLIC_API_URL;
+  const pieData = result
+    ? {
+      labels: ["승리 확률", "무승부 확률", "패배 확률"],
+      datasets: [
+        {
+          data: [
+            result.win_prob * 100,
+            result.draw_prob * 100,
+            result.loss_prob * 100,
+          ],
+          backgroundColor: ["#86efac", "#e5e7eb", "#fca5a5"],
+          borderWidth: 1,
+        },
+      ],
+    }
+    : null;
 
+  const homeTeamName = teams.find(t => String(t.team_id) === String(teamId))?.team_name ?? teamId;
+  const awayTeamName = teams.find(t => String(t.team_id) === String(opponent))?.team_name ?? opponent;
 
   // 팀 목록 로드
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        console.log("🔵 API 호출 시도:", `${API}/api/meta/teams.php`);
 
-        const res = await fetch(`${API}/api/meta/teams.php`);
-
-        console.log("🟡 응답 상태:", res.status);
+        const res = await fetch(`${API}/api/meta/teams.php`,
+          {
+            headers: {
+              "ngrok-skip-browser-warning": "69420"
+            },
+          });
 
         if (!res.ok) {
           console.log("❌ res.ok == false");
@@ -45,11 +85,10 @@ export default function StrategyPage() {
         }
 
         const data = await res.json();
-        console.log("🟢 팀 데이터:", data);
 
         setTeams(data);
       } catch (e) {
-        console.log("🔥 API 호출 에러:", e);
+
       }
     };
 
@@ -59,19 +98,9 @@ export default function StrategyPage() {
 
   const handleExecute = async () => {
     if (!isReady) {
-      console.log("⛔ 실행 불가: teamId / opponent / date 중 하나가 비어 있음");
+
       return;
     }
-
-    console.log("🚀 실행 시작!");
-    console.log("🔧 API BASE URL:", API);
-    console.log("📡 요청 URL:", `${API}/api/match.php`);
-    console.log("📨 요청 바디:", {
-      match_date: date,
-      home_team_id: teamId,
-      away_team_id: opponent,
-      strategy: "attack_focus",
-    });
 
     setLoading(true);
     setResult(null);
@@ -79,7 +108,10 @@ export default function StrategyPage() {
     try {
       const res = await fetch(`${API}/api/match.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420",
+        },
         body: JSON.stringify({
           match_date: date,
           home_team_id: teamId,
@@ -128,7 +160,7 @@ export default function StrategyPage() {
 
           {/* 우리팀 선택 */}
           <select
-            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-40 text-xs sm:text-sm"
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
           >
@@ -142,7 +174,7 @@ export default function StrategyPage() {
 
           {/* 상대팀 선택 */}
           <select
-            className="border p-1 rounded w-32 sm:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-40 text-xs sm:text-sm"
             value={opponent}
             onChange={(e) => setOpponent(e.target.value)}
           >
@@ -189,27 +221,90 @@ export default function StrategyPage() {
 
         {/* 결과 */}
         {result && (
-          <div className="flex justify-center mt-2 w-full">
-            <div className="bg-white rounded-xl p-4 w-full text-left border">
-              <p className="text-sm sm:text-base font-bold mb-2">예상 경기 결과</p>
-              <p className="text-xs sm:text-sm">예상 득점: {result.expected_points}</p>
-              <p className="text-xs sm:text-sm">승리 확률: {(result.win_prob * 100).toFixed(0)}%</p>
-              <p className="text-xs sm:text-sm">무승부 확률: {(result.draw_prob * 100).toFixed(0)}%</p>
-              <p className="text-xs sm:text-sm">패배 확률: {(result.loss_prob * 100).toFixed(0)}%</p>
+          <div className="flex flex-col md:flex-row mt-4 gap-6 w-full">
 
-              <div className="mt-3">
-                <p className="font-semibold text-xs sm:text-sm">전략 영향:</p>
+            {/* 🎯 원형 그래프 */}
+            <div className="w-full md:w-1/3 flex justify-center items-center p-4">
+              {pieData && (
+                <Pie
+                  data={pieData}
+                  options={{
+                    plugins: {
+                      legend: { display: true, position: "bottom" },
+                    },
+                  }}
+                />
+              )}
+            </div>
+
+            {/* 🎯 오른쪽 결과 텍스트 */}
+            {/* 🎯 오른쪽 결과 텍스트 */}
+            <div className="w-full md:w-2/3 p-6 bg-white border rounded-xl">
+
+              {/* 팀 정보 */}
+              <h2 className="text-lg font-bold mb-8">
+                {homeTeamName} (홈) vs {awayTeamName} (어웨이)
+              </h2>
+
+              <p className="text-sm sm:text-base font-bold mb-2">예상 경기 결과</p>
+
+              <p className="text-xs sm:text-sm mb-1">예상 득점: {result.expected_points}</p>
+
+              {/* 승/무/패 확률 + 색상 */}
+              <div className="space-y-1 mt-2">
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 rounded text-xs sm:text-sm bg-green-100 text-green-700">
+                    승리
+                  </span>
+                  <span className="text-xs sm:text-sm">
+                    {(result.win_prob * 100).toFixed(0)}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 rounded text-xs sm:text-sm bg-gray-100 text-gray-700">
+                    무승부
+                  </span>
+                  <span className="text-xs sm:text-sm">
+                    {(result.draw_prob * 100).toFixed(0)}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 rounded text-xs sm:text-sm bg-red-100 text-red-700">
+                    패배
+                  </span>
+                  <span className="text-xs sm:text-sm">
+                    {(result.loss_prob * 100).toFixed(0)}%
+                  </span>
+                </div>
+
+              </div>
+
+              {/* 전략 영향 */}
+              {/* 전략 영향 */}
+              <div className="mt-10">
+                <p className="font-semibold sm:text-base text-sm">전략 영향:</p>
+
                 {result.strategy_impacts.map((s, idx) => (
-                  <div key={idx} className="ml-2">
-                    <p className="text-xs sm:text-sm">
-                      {s.strategy}: Δ득점 {s.delta_expected_points} ({s.note})
+                  <div key={idx} className="mt-2 text-xs sm:text-sm">
+                    <p>
+                      <span className="font-medium">{strategyToKorean(s.strategy)}</span>,
+                      {" "}
+                      득점 변화: {coloredDelta(s.delta_expected_points)}
+                      {" "}
                     </p>
                   </div>
                 ))}
               </div>
+
+
             </div>
+
           </div>
         )}
+
 
       </div>
     </div>
