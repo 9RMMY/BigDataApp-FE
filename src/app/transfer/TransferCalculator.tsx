@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { JEONBUK_ID, JEONBUK_NAME } from "../constants/team";
 
 export default function TransferCalculator() {
-  const [team, setTeam] = useState("");
+  const [team, setTeam] = useState(String(JEONBUK_ID));
   const [player, setPlayer] = useState("");
 
   const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
@@ -27,7 +28,7 @@ export default function TransferCalculator() {
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
-  const actionType = team === "10" ? "release" : "acquire"; // ⭐ 자동 결정
+  const actionType = team === String(JEONBUK_ID) ? "release" : "acquire"; // ⭐ 자동 결정
 
   // 팀 목록 로드
   // 팀 목록 로드
@@ -135,7 +136,7 @@ export default function TransferCalculator() {
 
       if (actionType === "acquire") {
         setResult(
-          `✔ ${playerName} 선수를 전북 현대(TEAM 10)에 영입했습니다! (+${simResult.expected_points_change} 승점 예상)`
+          `✔ ${playerName} 선수를 ${JEONBUK_NAME}(TEAM ${JEONBUK_ID})에 영입했습니다! (+${simResult.expected_points_change} 승점 예상)`
         );
       } else {
         setResult(

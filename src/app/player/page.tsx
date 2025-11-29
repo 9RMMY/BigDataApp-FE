@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect} from "react";
+import { JEONBUK_ID } from "../constants/team";
 
 type Player = {
   player_id: string;
@@ -12,31 +13,58 @@ type Player = {
 };
 
 export default function PlayerPage() {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedPosition, setSelectedPosition] = useState("");
-  const [metric, setMetric] = useState("rating_growth");
+  const [metric, setMetric] = useState("offense");
 
   // API 호출
   const fetchPlayers = async () => {
+    console.log("🚀 fetchPlayers 시작");
     setLoading(true);
 
     try {
-      const params = new URLSearchParams({
-        position: selectedPosition,
-        metric,
-        sort: sortOrder,
-      });
+      const params = new URLSearchParams();
+      params.set("team_id", String(JEONBUK_ID));
+      if (selectedPosition) {
+        params.set("position", selectedPosition);
+      }
+      if (metric) {
+        params.set("metric", metric);
+      }
+      params.set("sort", sortOrder);
 
-      const res = await fetch(`/api/players/growth?${params.toString()}`);
-      const data = await res.json();
+      const query = params.toString();
+      const fullUrl = `${API}/api/player.php?${query}`;
+      console.log("🔍 요청 URL:", fullUrl);
+
+      const res = await fetch(
+        query ? `${API}/api/player.php?${query}` : `${API}/api/player.php`
+      );
+      console.log("📡 응답 status:", res.status);
+      
+      const responseText = await res.text();
+      console.log("📄 응답 텍스트 (앞 200자):", responseText.substring(0, 200));
+      
+      // HTML인지 확인
+      if (responseText.trim().startsWith('<')) {
+        console.error("❌ HTML 응답 받음 - API가 아닌 페이지를 받았습니다");
+        console.log("🔗 전체 응답 URL:", fullUrl);
+        return;
+      }
+      
+      const data = JSON.parse(responseText);
+      console.log("📋 응답 데이터:", data);
+      console.log("📊 players 배열:", data.players);
+      console.log("📊 players 길이:", data.players?.length);
 
       setPlayers(data.players || []);
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("🔥 API Error:", error);
     } finally {
       setLoading(false);
     }
@@ -53,6 +81,7 @@ export default function PlayerPage() {
     p.player_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // UI
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto pt-8">
@@ -69,11 +98,11 @@ export default function PlayerPage() {
                 value={selectedPosition}
                 onChange={(e) => setSelectedPosition(e.target.value)}
               >
-                <option value="">전체 포지션</option>
-                <option value="공격수">공격수(FW)</option>
-                <option value="미드필더">미드필더(MF)</option>
-                <option value="수비수">수비수(DF)</option>
-                <option value="골키퍼">골키퍼(GK)</option>
+                <option value="ALL">전체 포지션</option>
+                <option value="FW">공격수(FW)</option>
+                <option value="MF">미드필더(MF)</option>
+                <option value="DF">수비수(DF)</option>
+                <option value="GK">골키퍼(GK)</option>
               </select>
             </div>
 
@@ -87,9 +116,8 @@ export default function PlayerPage() {
                 value={metric}
                 onChange={(e) => setMetric(e.target.value)}
               >
-                <option value="rating_growth">전체 성장률</option>
-                <option value="attack_growth">공격력</option>
-                <option value="defense_growth">수비력</option>
+                <option value="offense">공격력</option>
+                <option value="defense">수비력</option>
               </select>
             </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { JEONBUK_ID } from "../constants/team";
 
 type Team = {
   team_id: string;
@@ -15,8 +16,9 @@ type Player = {
 };
 
 export default function PlayerManage() {
+  const API = process.env.NEXT_PUBLIC_API_URL;
   const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(String(JEONBUK_ID));
   const [players, setPlayers] = useState<Player[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
@@ -24,17 +26,28 @@ export default function PlayerManage() {
 
   const [searchName, setSearchName] = useState("");
   const [searchPosition, setSearchPosition] = useState("");
-  const [myTeamId, setMyTeamId] = useState<string>("10");
+  const [myTeamId, setMyTeamId] = useState<string>(String(JEONBUK_ID));
 
   useEffect(() => {
     const fetchTeams = async () => {
+      console.log("🏆 PlayerManage - 팀 목록 API 호출 시작");
       try {
         setLoadingTeams(true);
-        const res = await fetch("/api/meta/teams.php");
+        const url = `${API}/api/meta/teams.php`;
+        console.log("🔍 팀 목록 요청 URL:", url);
+        
+        const res = await fetch(url);
+        console.log("📡 팀 목록 응답 status:", res.status);
+        
         if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
+        
         const data: Team[] = await res.json();
+        console.log("📋 팀 목록 응답 데이터:", data);
+        console.log("📊 팀 수:", data.length);
+        
         setTeams(data);
       } catch (err) {
+        console.error("🔥 팀 목록 불러오기 실패:", err);
         setError((err as Error).message);
       } finally {
         setLoadingTeams(false);
@@ -47,17 +60,29 @@ export default function PlayerManage() {
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!selectedTeamId) {
+        console.log("⚠️ 선택된 팀이 없어 선수 목록을 비웁니다");
         setPlayers([]);
         return;
       }
 
+      console.log("⚽ PlayerManage - 선수 목록 API 호출 시작");
       try {
         setLoadingPlayers(true);
-        const res = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
+        const url = `${API}/api/meta/players.php?team_id=${selectedTeamId}`;
+        console.log("🔍 선수 목록 요청 URL:", url);
+        
+        const res = await fetch(url);
+        console.log("📡 선수 목록 응답 status:", res.status);
+        
         if (!res.ok) throw new Error("선수 정보를 불러오지 못했습니다.");
+        
         const data: Player[] = await res.json();
+        console.log("📋 선수 목록 응답 데이터:", data);
+        console.log("📊 선수 수:", data.length);
+        
         setPlayers(data);
       } catch (err) {
+        console.error("🔥 선수 목록 불러오기 실패:", err);
         setError((err as Error).message);
       } finally {
         setLoadingPlayers(false);
@@ -68,8 +93,12 @@ export default function PlayerManage() {
   }, [selectedTeamId]);
 
   const handleRelease = async (playerId: string) => {
+    console.log("🚪 선수 방출 시작 - player_id:", playerId);
     try {
-      const res = await fetch("/api/player.php", {
+      const url = `${API}/api/player.php`;
+      console.log("🔍 선수 방출 요청 URL:", url);
+      
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,11 +109,14 @@ export default function PlayerManage() {
         }),
       });
 
+      console.log("📡 선수 방출 응답 status:", res.status);
+
       if (!res.ok) {
         throw new Error("선수 방출에 실패했습니다.");
       }
 
       const result = await res.json();
+      console.log("📋 선수 방출 응답 데이터:", result);
       if (result.success) {
         setPlayers((prev) => prev.filter((p) => p.player_id !== playerId));
         alert(result.message || "선수 방출이 완료되었습니다.");
@@ -100,8 +132,12 @@ export default function PlayerManage() {
       return;
     }
 
+    console.log("🤝 선수 영입 시작 - player_id:", searchName.trim());
     try {
-      const res = await fetch("/api/player.php", {
+      const url = `${API}/api/player.php`;
+      console.log("🔍 선수 영입 요청 URL:", url);
+      
+      const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -112,11 +148,14 @@ export default function PlayerManage() {
         }),
       });
 
+      console.log("📡 선수 영입 응답 status:", res.status);
+
       if (!res.ok) {
         throw new Error("선수 영입에 실패했습니다.");
       }
 
       const result = await res.json();
+      console.log("📋 선수 영입 응답 데이터:", result);
       if (result.success) {
         alert(result.message || "선수 영입이 완료되었습니다.");
         setSearchName("");
@@ -124,10 +163,19 @@ export default function PlayerManage() {
         
         // Refresh players list if my team is selected
         if (selectedTeamId === myTeamId) {
-          const refreshRes = await fetch(`/api/meta/players.php?team_id=${selectedTeamId}`);
+          console.log("🔄 선수 목록 새로고침 시작");
+          const refreshUrl = `${API}/api/meta/players.php?team_id=${selectedTeamId}`;
+          console.log("🔍 새로고침 요청 URL:", refreshUrl);
+          
+          const refreshRes = await fetch(refreshUrl);
+          console.log("📡 새로고침 응답 status:", refreshRes.status);
+          
           if (refreshRes.ok) {
             const data: Player[] = await refreshRes.json();
+            console.log("📋 새로고침된 선수 목록:", data);
             setPlayers(data);
+          } else {
+            console.error("🔥 선수 목록 새로고침 실패");
           }
         }
       }
