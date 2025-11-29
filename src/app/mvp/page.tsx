@@ -45,7 +45,11 @@ export default function MVPPage() {
         const url = `${API}/api/mvp.php?season_id=2026`;
         console.log("🔍 MVP 요청 URL:", url);
         
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
         console.log("📡 MVP 응답 status:", res.status);
         
         if (!res.ok) throw new Error("MVP 후보 데이터 조회 실패");
@@ -72,7 +76,11 @@ export default function MVPPage() {
         const url = `${API}/api/best11.php?season_id=2026`;
         console.log("🔍 Best11 요청 URL:", url);
         
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
         console.log("📡 Best11 응답 status:", res.status);
         
         if (!res.ok) throw new Error("Best11 데이터 조회 실패");

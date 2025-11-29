@@ -115,13 +115,27 @@ export default function Home() {
   // 팀 목록 API 호출
   useEffect(() => {
     const fetchTeams = async () => {
+      console.log("🏠 홈페이지 - 팀 목록 API 호출 시작");
       try {
-        setLoadingTeams(true);
-        const res = await fetch(`${API}/api/meta/teams.php`);
+        const url = `${API}/api/meta/teams.php`;
+        console.log("🔍 팀 목록 요청 URL:", url);
+        
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
+        console.log("📡 팀 목록 응답 status:", res.status);
+        
         if (!res.ok) throw new Error('팀 목록 조회 실패');
+        
         const data = await res.json();
+        console.log("📋 팀 목록 응답 데이터:", data);
+        console.log("📊 팀 수:", data.length);
+        
         setTeams(data);
       } catch (e) {
+        console.error("🔥 팀 목록 불러오기 실패:", e);
         setTeamsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
       } finally {
         setLoadingTeams(false);
@@ -134,21 +148,41 @@ export default function Home() {
   // 팀 순위 예측 데이터 API 호출
   useEffect(() => {
     const fetchTeamRankingData = async () => {
+      console.log("📈 홈페이지 - 팀 순위 예측 API 호출 시작");
       try {
         setLoadingRanking(true);
         
         // 팀 목록이 로드된 후에 순위 데이터 호출
-        if (teams.length === 0) return;
+        if (teams.length === 0) {
+          console.log("⚠️ 팀 목록이 비어있어 순위 데이터 호출을 건너뜁니다");
+          return;
+        }
+        
+        console.log("📊 순위 데이터 요청할 팀 수:", teams.length);
         
         const promises = teams.map(async (team) => {
-          const res = await fetch(`${API}/api/team.php?season_id=2026&team_id="${team.team_id}"`);
+          const url = `${API}/api/team.php?season_id=2026&team_id="${team.team_id}"`;
+          console.log(`🔍 팀 순위 요청 URL (${team.team_id}):`, url);
+          
+          const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
+          console.log(`📡 팀 순위 응답 status (${team.team_id}):`, res.status);
+          
           if (!res.ok) throw new Error(`${team.team_id} 팀 순위 데이터 조회 실패`);
-          return res.json();
+          
+          const data = await res.json();
+          console.log(`📋 팀 순위 응답 데이터 (${team.team_id}):`, data);
+          return data;
         });
         
         const data = await Promise.all(promises);
+        console.log("📊 모든 팀 순위 데이터 로드 완료:", data.length);
         setTeamRankingData(data);
       } catch (e) {
+        console.error("🔥 팀 순위 데이터 불러오기 실패:", e);
         setRankingError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
       } finally {
         setLoadingRanking(false);
@@ -163,18 +197,32 @@ export default function Home() {
   // 득점 비율 데이터 API 호출
   useEffect(() => {
     const fetchGoalStatsData = async () => {
+      console.log("⚽ 홈페이지 - 득점 비율 데이터 API 호출 시작");
       try {
         setLoadingGoalStats(true);
         
-        const res = await fetch(`${API}/api/analysis/olap.php?season_id=2026`);
+        const url = `${API}/api/analysis/olap.php?season_id=2026`;
+        console.log("🔍 득점 비율 요청 URL:", url);
+        
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
+        console.log("📡 득점 비율 응답 status:", res.status);
+        
         if (!res.ok) throw new Error('득점 통계 데이터 조회 실패');
+        
         const data = await res.json();
+        console.log("📋 득점 비율 응답 데이터:", data);
         
         // OLAP 데이터를 GoalStatsResponse 형식으로 변환
         const teamData = data.data.find((item: any) => item.position === 'SUBTOTAL' && item.team_name !== 'TOTAL');
         const totalData = data.data.find((item: any) => item.team_name === 'TOTAL');
         const fwData = data.data.find((item: any) => item.position === 'FW');
         const mfData = data.data.find((item: any) => item.position === 'MF');
+        
+        console.log("📊 추출된 데이터:", { teamData, totalData, fwData, mfData });
         
         if (teamData && totalData && fwData && mfData) {
           const goalStats: GoalStatsResponse = {
@@ -183,11 +231,14 @@ export default function Home() {
             midfielder_goals: mfData.total_goals,
             forward_goals: fwData.total_goals
           };
+          console.log("📈 변환된 득점 통계:", goalStats);
           setGoalStatsData(goalStats);
         } else {
+          console.error("❌ 필요한 득점 데이터를 찾을 수 없습니다");
           throw new Error('필요한 득점 데이터를 찾을 수 없습니다');
         }
       } catch (e) {
+        console.error("🔥 득점 비율 데이터 불러오기 실패:", e);
         setGoalStatsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
       } finally {
         setLoadingGoalStats(false);
@@ -200,13 +251,29 @@ export default function Home() {
   // 최근 경기 결과 API 호출
   useEffect(() => {
     const fetchMatchResults = async () => {
+      console.log("🏆 홈페이지 - 최근 경기 결과 API 호출 시작");
       try {
         setLoadingMatches(true);
-        const res = await fetch(`${API}/api/match/recent.php?limit=12`);
+        
+        const url = `${API}/api/match/recent.php?limit=12`;
+        console.log("🔍 최근 경기 요청 URL:", url);
+        
+        const res = await fetch(url, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
+        console.log("📡 최근 경기 응답 status:", res.status);
+        
         if (!res.ok) throw new Error('최근 경기 결과 조회 실패');
+        
         const data = await res.json();
+        console.log("📋 최근 경기 응답 데이터:", data);
+        console.log("📊 경기 수:", data.length);
+        
         setMatchResultsData(data);
       } catch (e) {
+        console.error("🔥 최근 경기 결과 불러오기 실패:", e);
         setMatchesError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
       } finally {
         setLoadingMatches(false);
