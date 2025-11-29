@@ -26,6 +26,38 @@ type SimulationLog = {
   };
 };
 
+const makeDeltaText = (delta: any, teams: any[]) => {
+  return Object.entries(delta).map(([key, stats]: any) => {
+    const team = teams.find(t =>
+      t.team_name.includes(key) || key.includes(String(t.team_id))
+    );
+
+    const teamName = team?.team_name ?? key;
+
+    const colored = (value: number) => (
+      <span className={value >= 0 ? "text-red-600" : "text-blue-600"}>
+        {value >= 0 ? `+${value}` : value}
+      </span>
+    );
+
+    return (
+      <div key={key}>
+        <span className="font-semibold">{teamName}</span>:{" "}
+        공격력 {colored(stats.attack)},{" "}
+        수비력 {colored(stats.defense)},{" "}
+        평균 전력 지수 {colored(stats.rating)}
+      </div>
+    );
+  });
+};
+
+
+
+const getTeamName = (id: number, teams: any[]) =>
+  teams.find(t => t.team_id === id)?.team_name ?? `팀 ${id}`;
+
+const getPlayerName = (id: number, list: any[]) =>
+  list.find(p => p.player_id === id)?.player_name ?? `선수 ${id}`;
 
 export default function TradeSimulator() {
   const [leftTeam1, setLeftTeam1] = useState(JEONBUK_ID); // 우리팀 고정
@@ -41,16 +73,18 @@ export default function TradeSimulator() {
     { player_id: number; player_name: string; position: string; team_id: number }[]
   >([]);
 
+  const [allPlayers, setAllPlayers] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; message: React.ReactNode } | null>(null);
+
   const [tradeHistory, setTradeHistory] = useState<{
     id: number;
     leftTeam: string;
     leftPlayer: string;
     rightTeam: string;
     rightPlayer: string;
-    summary: string;
+    summary: React.ReactNode;
     timestamp: Date;
   }[]>([]);
 
@@ -58,6 +92,7 @@ export default function TradeSimulator() {
 
   const API = process.env.NEXT_PUBLIC_API_URL;
   console.log("🔥 API_BASE =", API);
+
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -81,62 +116,23 @@ export default function TradeSimulator() {
 
     fetchTeams();
   }, []);
-
   useEffect(() => {
-    const fetchSimulationLogs = async () => {
+    const fetchAllPlayers = async () => {
       try {
-        const res = await fetch(`${API}/api/simulations/log.php`, {
-          headers: {
-            "ngrok-skip-browser-warning": "69420",
-          },
+        const res = await fetch(`${API}/api/meta/players.php`, {
+          headers: { "ngrok-skip-browser-warning": "69420" },
         });
 
         if (!res.ok) return;
 
-        const data = (await res.json()) as SimulationLog[];
-
-        const tradeLogs = data.filter(
-          (log) =>
-            log.type === "trade" &&
-            !!log.team_a_id &&
-            !!log.team_b_id
-        );
-
-        const mapped = tradeLogs.map((log) => {
-          let summary = "트레이드 시뮬레이션 기록";
-          if (log.delta) {
-            const parts: string[] = [];
-            for (const [teamId, stats] of Object.entries(log.delta)) {
-              const attack = stats.attack >= 0 ? `+${stats.attack}` : `${stats.attack}`;
-              const defense = stats.defense >= 0 ? `+${stats.defense}` : `${stats.defense}`;
-              const rating = stats.rating >= 0 ? `+${stats.rating}` : `${stats.rating}`;
-              parts.push(
-                `${teamId} 공격 ${attack}, 수비 ${defense}, 평점 ${rating}`
-              );
-            }
-            if (parts.length > 0) {
-              summary = `트레이드 시뮬레이션 결과: ${parts.join(" / ")}`;
-            }
-          }
-
-          return {
-            id: log.log_id,
-            leftTeam: String(log.team_a_id),
-            leftPlayer: (log.players_a ?? []).join(", "),
-            rightTeam: String(log.team_b_id),
-            rightPlayer: (log.players_b ?? []).join(", "),
-            summary,
-            timestamp: new Date(),
-          };
-        });
-
-        setTradeHistory((prev) => [...mapped, ...prev]);
+        const data = await res.json();
+        setAllPlayers(data);
       } catch (e) {
-        console.error("시뮬레이션 로그 로드 실패", e);
+        console.error("전체 선수 목록 로드 실패", e);
       }
     };
 
-    fetchSimulationLogs();
+    fetchAllPlayers();
   }, []);
 
   // ===============================
@@ -207,10 +203,15 @@ export default function TradeSimulator() {
   // 🔥 트레이드 실행
   // ===============================
   const handleTrade = async () => {
+
+    if (teams.length === 0) {
+      console.error("팀 정보가 로드되지 않았습니다.");
+      return;
+    }
     if (!isReadyToTrade) return;
 
     setLoading(true);
-    setResult(null);
+
 
     try {
       const res = await fetch(`${API}/api/simulations/trade.php`, {
@@ -233,12 +234,12 @@ export default function TradeSimulator() {
       if (!res.ok) throw new Error("API response not OK");
 
       const data = await res.json();
+      const deltaText = makeDeltaText(data.delta, teams);
 
       setResult({
         ok: true,
-        message: `${data.summary} (log_id: ${data.log_id})`,
+        message: deltaText
       });
-
       // 트레이드 히스토리에 기록
       const leftTeamName = JEONBUK_NAME;
       const rightTeamName = String(
@@ -255,13 +256,14 @@ export default function TradeSimulator() {
 
       setTradeHistory(prev => [{
         id: data.log_id,
-        leftTeam: leftTeamName,
-        leftPlayer: leftPlayerName,
-        rightTeam: rightTeamName,
-        rightPlayer: rightPlayerName,
-        summary: String(data.summary),
+        leftTeam: getTeamName(leftTeam1, teams),
+        leftPlayer: getPlayerName(Number(leftTeam2), leftPlayers),
+        rightTeam: getTeamName(Number(rightTeam1), teams),
+        rightPlayer: getPlayerName(Number(rightTeam2), rightPlayers),
+        summary: makeDeltaText(data.delta, teams),
         timestamp: new Date()
       }, ...prev]);
+
     } catch (err) {
       setResult({ ok: false, message: "에러 발생!" });
     }
@@ -286,6 +288,49 @@ export default function TradeSimulator() {
     }
   };
 
+
+  useEffect(() => {
+    // teams 또는 allPlayers가 아직 없으면 실행하지 않음
+    if (teams.length === 0 || allPlayers.length === 0) return;
+
+    const fetchSimulationLogs = async () => {
+      try {
+        const res = await fetch(`${API}/api/simulations/log.php`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
+
+        if (!res.ok) return;
+
+        const data = (await res.json()) as SimulationLog[];
+
+        const tradeLogs = data.filter(
+          (log) =>
+            log.type === "trade" &&
+            !!log.team_a_id &&
+            !!log.team_b_id
+        );
+
+        const mapped = tradeLogs.map((log) => ({
+          id: log.log_id,
+          leftTeam: getTeamName(log.team_a_id!, teams),
+          rightTeam: getTeamName(log.team_b_id!, teams),
+          leftPlayer: getPlayerName(Number(log.players_a?.[0]), allPlayers),
+          rightPlayer: getPlayerName(Number(log.players_b?.[0]), allPlayers),
+          summary: makeDeltaText(log.delta!, teams),
+          timestamp: new Date()
+        }));
+
+        setTradeHistory(mapped);
+      } catch (e) {
+        console.error("시뮬레이션 로그 로드 실패", e);
+      }
+    };
+
+    fetchSimulationLogs();
+  }, [teams, allPlayers]); // ⬅ 여기 중요
+
   // ===============================
   // 🔽 UI
   // ===============================
@@ -304,7 +349,7 @@ export default function TradeSimulator() {
 
           {/* 왼쪽 팀 */}
           <select
-            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-40 text-xs sm:text-sm"
             value={leftTeam1}
             disabled
           >
@@ -314,7 +359,7 @@ export default function TradeSimulator() {
 
           {/* 왼쪽 선수 */}
           <select
-            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-24 text-xs sm:text-sm"
             value={leftTeam2}
             onChange={(e) => setLeftTeam2(e.target.value)}
             disabled={!leftTeam1 || leftPlayers.length === 0}
@@ -329,7 +374,7 @@ export default function TradeSimulator() {
 
           {/* Trade 버튼 */}
           <button
-            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[110px] sm:w-auto ${isReadyToTrade ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
+            className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm transition w-[80px] ${isReadyToTrade ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
               }`}
             onClick={handleTrade}
             disabled={!isReadyToTrade}
@@ -339,7 +384,7 @@ export default function TradeSimulator() {
 
           {/* 오른쪽 팀 */}
           <select
-            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-40 text-xs sm:text-sm"
             value={rightTeam1}
             onChange={(e) => setRightTeam1(Number(e.target.value))}
           >
@@ -353,7 +398,7 @@ export default function TradeSimulator() {
 
           {/* 오른쪽 선수 */}
           <select
-            className="border p-1 rounded w-28 sm:w-32 md:w-36 text-xs sm:text-sm"
+            className="border p-1 rounded w-24 text-xs sm:text-sm"
             value={rightTeam2}
             onChange={(e) => setRightTeam2(e.target.value)}
             disabled={!rightTeam1 || rightPlayers.length === 0}
@@ -385,7 +430,7 @@ export default function TradeSimulator() {
               <h2 className="text-lg sm:text-xl font-bold mb-2">
                 {result.ok ? "🎉 트레이드 성공!" : "❌ 트레이드 실패"}
               </h2>
-              <p className="text-gray-600 text-xs sm:text-sm">{result.message}</p>
+              <p className="text-md">{result.message}</p>
             </div>
           </div>
         )}
@@ -394,13 +439,14 @@ export default function TradeSimulator() {
         {tradeHistory.length > 0 && (
           <div className="mt-6">
             <h3 className="text-lg font-bold mb-3 text-gray-800">📜 트레이드 히스토리</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {tradeHistory.map((trade) => (
                 <div key={trade.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-900">
                         {trade.leftTeam} ({trade.leftPlayer}) ↔ {trade.rightTeam} ({trade.rightPlayer})
+
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         {trade.summary}
