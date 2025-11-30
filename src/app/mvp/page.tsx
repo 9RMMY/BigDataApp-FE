@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Card from "../components/Card";
-import { loadTeamSession } from "../../utils/teamSession";
+import { loadTeamSession, setMyTeam, getMyTeam } from "../../utils/teamSession";
 
 type MVPCandidate = {
   player: string;
@@ -50,14 +50,32 @@ export default function MVPPage() {
   const [best11SearchQuery, setBest11SearchQuery] = useState("");
   const [best11SelectedPosition, setBest11SelectedPosition] = useState("");
 
-  // localStorage에서 팀 정보 불러오기
+  // API에서 팀 정보 불러오기
   useEffect(() => {
-    const sessionData = loadTeamSession();
-    if (sessionData) {
-      setTeams(sessionData.teams);
-      setMyTeamId(sessionData.my_team_id);
-      setMyTeamName(sessionData.my_team_name);
+    async function fetchTeamData() {
+      try {
+        // 먼저 localStorage 확인
+        const sessionData = loadTeamSession();
+        if (sessionData) {
+          setTeams(sessionData.teams);
+          setMyTeamId(sessionData.my_team_id);
+          setMyTeamName(sessionData.my_team_name);
+        } else {
+          // localStorage에 없으면 API로 조회
+          const teamData = await getMyTeam();
+          const fullTeamData = await setMyTeam(teamData.my_team_id);
+          
+          setTeams(fullTeamData.teams);
+          setMyTeamId(teamData.my_team_id);
+          // 팀 이름 찾기
+          const myTeam = fullTeamData.teams.find(t => t.team_id === teamData.my_team_id);
+          setMyTeamName(myTeam?.team_name || "");
+        }
+      } catch (err) {
+        console.error("🔥 팀 정보 불러오기 실패:", err);
+      }
     }
+    fetchTeamData();
   }, []);
 
   // MVP API 호출
@@ -127,7 +145,7 @@ export default function MVPPage() {
   }
   const filteredBest11 = best11
     .filter((item) =>
-      best11SelectedPosition ? item.position === best11SelectedPosition : true
+      best11SelectedPosition && best11SelectedPosition !== "ALL" ? item.position === best11SelectedPosition : true
     )
     .filter((item) =>
       best11SearchQuery
