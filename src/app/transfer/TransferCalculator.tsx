@@ -71,10 +71,10 @@ export default function TransferCalculator() {
           },
         });
 
-        if (!res.ok) {
-          console.log("❌ [TEAM API] res.ok = false");
-          return;
-        }
+          if (!res.ok) {
+            console.log("❌ [TEAM API] res.ok = false");
+            return;
+          }
 
         const data = await res.json();
         setTeams(data);
