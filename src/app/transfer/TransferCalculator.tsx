@@ -2,7 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { JEONBUK_ID, JEONBUK_NAME } from "../constants/team";
-import { loadTeamSession, setMyTeam, getMyTeam } from "../../utils/teamSession";
+import { loadTeamSession } from "../../utils/teamSession";
+
+type TransferLog = {
+  log_id: number;
+  type: "acquire" | "release";
+  team_id: number;
+  player_in_id: number;
+  expected_points_change: number;
+  new_team_rating: number;
+  notes?: string;
+};
 
 export default function TransferCalculator() {
   const [team, setTeam] = useState(String(JEONBUK_ID));
@@ -16,22 +26,35 @@ export default function TransferCalculator() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
-  const [transferLogs, setTransferLogs] = useState<{
-    log_id: number;
+  const [resultData, setResultData] = useState<{
+    teamName: string;
+    playerName: string;
+    actionLabel: string;
+    points: number;
+    rating: number;
+    notes?: string;
+  } | null>(null);
+
+  const [transferLogs, setTransferLogs] = useState<TransferLog[]>([]);
+  const [transferHistory, setTransferHistory] = useState<{
+    id: number;
+    team: string;
+    player: string;
     type: "acquire" | "release";
-    team_id: number;
-    player_in_id: number;
-    expected_points_change: number;
-    new_team_rating: number;
+    summary: React.ReactNode;
+    timestamp: Date;
   }[]>([]);
 
   const isReady = team && player;
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
-  const actionType = team === String(JEONBUK_ID) ? "release" : "acquire"; // ⭐ 자동 결정
+  const actionType: "acquire" | "release" =
+    team === String(JEONBUK_ID) ? "release" : "acquire";
 
-  // 팀 목록 로드
+  const [allPlayers, setAllPlayers] = useState<
+    { player_id: string; player_name: string }[]
+  >([]);
   useEffect(() => {
     const loadTeams = async () => {
       try {
@@ -77,10 +100,32 @@ export default function TransferCalculator() {
     };
 
     loadTeams();
-  }, []);
+  }, [API]);
+  useEffect(() => {
+    const fetchAllPlayers = async () => {
+      try {
+        const res = await fetch(`${API}/api/meta/players.php`, {
+          headers: { "ngrok-skip-browser-warning": "69420" }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAllPlayers(data);
+        }
+      } catch (e) {
+        console.log("🔥 [ALL PLAYERS API ERROR]", e);
+      }
+    };
 
+    fetchAllPlayers();
+  }, [API]);
+  const getPlayerName = (id: number) => {
+    return (
+      allPlayers.find((p) => Number(p.player_id) === id)?.player_name ??
+      players.find((p) => Number(p.player_id) === id)?.player_name ??
+      String(id)
+    );
+  };
 
-  // 팀 선택 시 해당 팀 선수 목록 로드
   useEffect(() => {
     const fetchPlayers = async () => {
       if (!team) {
@@ -90,13 +135,11 @@ export default function TransferCalculator() {
       }
 
       try {
-        const res = await fetch(`${API}/api/meta/players.php?team_id=${team}`,
-          {
-            headers: {
-              "ngrok-skip-browser-warning": "69420",
-            },
-          });
-
+        const res = await fetch(`${API}/api/meta/players.php?team_id=${team}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
 
         if (!res.ok) {
           console.log("❌ [PLAYER API] res.ok = false");
@@ -104,7 +147,6 @@ export default function TransferCalculator() {
         }
 
         const data = await res.json();
-        console.log("🟢 [PLAYER API] 응답 데이터 =", data);
 
         setPlayers(data);
         setPlayer("");
@@ -116,7 +158,31 @@ export default function TransferCalculator() {
     };
 
     fetchPlayers();
-  }, [team]);
+  }, [team, API]);
+
+  const renderColoredNumber = (value: number) => {
+    const prefix = value > 0 ? "+" : "";
+    const color =
+      value > 0 ? "text-red-600" : value < 0 ? "text-blue-600" : "text-gray-700";
+
+    return <span className={color}>{prefix}{value}</span>;
+  };
+
+
+  const renderColoredNotes = (text?: string) => {
+    if (!text) return null;
+
+    return (
+      <p className="leading-tight text-gray-700">
+        평가:{" "}
+        {text.split(/(상승|하락)/).map((word, i) => {
+          if (word === "상승") return <span key={i} className="text-red-600">상승</span>;
+          if (word === "하락") return <span key={i} className="text-blue-600">하락</span>;
+          return word;
+        })}
+      </p>
+    );
+  };
 
 
   const handleTransfer = async () => {
@@ -126,12 +192,11 @@ export default function TransferCalculator() {
     setResult(null);
 
     try {
-      // 1) 시뮬레이션 영향 계산
       const resSim = await fetch(`${API}/api/simulations/transfer.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "69420"
+          "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({
           team_id: Number(team),
@@ -141,14 +206,18 @@ export default function TransferCalculator() {
       });
 
       if (!resSim.ok) throw new Error("Simulation API Error");
-      const simResult = await resSim.json();
+      const simResult: {
+        expected_points_change: number;
+        new_team_rating: number;
+        notes?: string;
+        log_id: number;
+      } = await resSim.json();
 
-      // 2) 실제 선수 영입/방출 처리
       const resApply = await fetch(`${API}/api/player.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "69420"
+          "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({
           action: actionType,
@@ -157,19 +226,47 @@ export default function TransferCalculator() {
       });
 
       if (!resApply.ok) throw new Error("Player API Error");
-      const applyResult = await resApply.json();
+      await resApply.json();
 
-      const playerName = players.find((p) => p.player_id === player)?.player_name || player;
+      const teamName =
+        teams.find((t) => Number(t.team_id) === Number(team))?.team_name ?? String(team);
 
-      if (actionType === "acquire") {
-        setResult(
-          `✔ ${playerName} 선수를 ${JEONBUK_NAME}(TEAM ${JEONBUK_ID})에 영입했습니다! (+${simResult.expected_points_change} 승점 예상)`
-        );
-      } else {
-        setResult(
-          `✔ ${playerName} 선수를 방출했습니다. (전력 변화: ${simResult.expected_points_change})`
-        );
-      }
+      const playerNameKor =
+        players.find((p) => p.player_id === player)?.player_name || player;
+
+      const actionLabel = actionType === "acquire" ? "영입 완료" : "방출 완료";
+
+      const prefix = simResult.expected_points_change > 0 ? "+" : "";
+      const color = simResult.expected_points_change > 0 ? "text-red-600" : "text-blue-600";
+
+      const noteColor =
+        simResult.notes?.includes("상승") ? "text-red-600" :
+          simResult.notes?.includes("하락") ? "text-blue-600" :
+            "text-gray-700";
+
+      setResultData({
+        teamName,
+        playerName: getPlayerName(Number(player)),
+        actionLabel,
+        points: simResult.expected_points_change,
+        rating: simResult.new_team_rating,
+        notes: simResult.notes
+      });
+
+
+
+      setTransferLogs((prev) => [
+        {
+          log_id: simResult.log_id,
+          type: actionType,
+          team_id: Number(team),
+          player_in_id: Number(player),
+          expected_points_change: simResult.expected_points_change,
+          new_team_rating: simResult.new_team_rating,
+          notes: simResult.notes,
+        },
+        ...prev,
+      ]);
     } catch (e) {
       setResult("에러 발생!");
     }
@@ -179,21 +276,30 @@ export default function TransferCalculator() {
 
   useEffect(() => {
     const fetchLogs = async () => {
-      console.log("📘 [LOG API] GET 시작");
-
       try {
-        const res = await fetch(`${API}/api/simulations/log.php`);
-        console.log("📘 [LOG API] status =", res.status);
+        const res = await fetch(`${API}/api/simulations/log.php`, {
+          headers: {
+            "ngrok-skip-browser-warning": "69420",
+          },
+        });
 
         if (!res.ok) return;
 
         const data = await res.json();
 
-        const filtered = data.filter((log: any) =>
-          log.type === "acquire" || log.type === "release"
-        );
-
-        console.log("📘 [LOG API] 필터링된 영입/방출 로그 =", filtered);
+        const filtered: TransferLog[] = data
+          .filter(
+            (log: any) => log.type === "acquire" || log.type === "release"
+          )
+          .map((log: any) => ({
+            log_id: log.log_id,
+            type: log.type,
+            team_id: log.team_id,
+            player_in_id: log.player_in_id,
+            expected_points_change: log.expected_points_change,
+            new_team_rating: log.new_team_rating,
+            notes: log.notes,
+          }));
 
         setTransferLogs(filtered);
       } catch (e) {
@@ -202,46 +308,66 @@ export default function TransferCalculator() {
     };
 
     fetchLogs();
-  }, []);
+  }, [API]);
 
+  useEffect(() => {
+    if (teams.length === 0 || players.length === 0) return;
+
+    const mapped = transferLogs.map((log) => {
+      const teamName =
+        teams.find((t) => Number(t.team_id) === log.team_id)?.team_name ??
+        String(log.team_id);
+      const playerName =
+        players.find((p) => Number(p.player_id) === log.player_in_id)
+          ?.player_name ?? String(log.player_in_id);
+
+      return {
+        id: log.log_id,
+        team: teamName,
+        player: playerName,
+        type: log.type,
+        summary: (
+          <div className="leading-tight">
+            <p>승점 변화: {renderColoredNumber(log.expected_points_change)}</p>
+            <p>새로운 팀 평점: {log.new_team_rating}</p>
+            {renderColoredNotes(log.notes)}
+          </div>
+        ),
+        timestamp: new Date(),
+      };
+    });
+
+    setTransferHistory(mapped);
+  }, [transferLogs, teams, players]);
 
   const handleDeleteLog = async (log_id: number) => {
-    console.log("🗑 [DELETE LOG] 요청 시작", log_id);
-
     try {
       const res = await fetch(`${API}/api/simulations/log.php?log_id=${log_id}`, {
         method: "DELETE",
         headers: {
-          "ngrok-skip-browser-warning": "69420"
+          "ngrok-skip-browser-warning": "69420",
         },
       });
 
       if (res.ok || res.status === 204) {
         setTransferLogs((prev) => prev.filter((l) => l.log_id !== log_id));
+        setTransferHistory((prev) => prev.filter((t) => t.id !== log_id));
       }
     } catch (e) {
       console.log("🔥 [DELETE LOG] 오류 =", e);
     }
   };
 
-
   return (
     <div className="flex flex-1 bg-white flex-col md:flex-row">
-
-      {/* Sidebar */}
       <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start mr-4">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10 text-center md:text-left">
           TRANSFER
         </h1>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-6 flex flex-col">
-
-        {/* Controls */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
-
-          {/* 팀 선택 */}
           <select
             className="border p-1 rounded w-44 "
             value={team}
@@ -255,7 +381,6 @@ export default function TransferCalculator() {
             ))}
           </select>
 
-          {/* 선수 선택 */}
           <select
             className="border p-1 rounded w-24"
             value={player}
@@ -270,10 +395,12 @@ export default function TransferCalculator() {
             ))}
           </select>
 
-          {/* 실행 버튼 (자동 영입/방출) */}
           <button
             className={`px-3 py-1.5 rounded text-white text-xs sm:text-sm w-auto
-              ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"}`}
+              ${isReady
+                ? "bg-primary hover:bg-primary/80"
+                : "bg-gray-400 cursor-not-allowed"
+              }`}
             onClick={handleTransfer}
             disabled={!isReady}
           >
@@ -281,69 +408,73 @@ export default function TransferCalculator() {
           </button>
         </div>
 
-        {/* 안내 */}
         {!loading && !result && (
           <div className="text-left text-gray-500 mb-3 text-xs sm:text-sm">
             팀 / 선수 선택 후 실행 버튼을 눌러주세요.
           </div>
         )}
 
-        {/* 로딩 */}
         {loading && (
           <div className="flex justify-center my-3">
             <div className="animate-spin h-7 w-7 border-4 border-gray-300 border-t-primary rounded-full"></div>
           </div>
         )}
 
-        {/* 결과 */}
-        {result && (
-          <div className="flex justify-center w-full mt-2">
-            <div className="bg-white shadow-lg rounded-xl p-4 w-full text-left border">
-              <p className="text-gray-700 text-sm sm:text-base">{result}</p>
-            </div>
+        {resultData && (
+          <div className="bg-white shadow-lg rounded-xl p-4 w-full text-left border">
+            <p className="text-xl font-bold leading-tight">
+              [{resultData.teamName}] - {resultData.playerName} {resultData.actionLabel}!
+            </p>
+
+            <p className="mt-2 leading-tight">
+              승점 변화: {renderColoredNumber(resultData.points)}
+            </p>
+
+            <p className="leading-tight">
+              새로운 팀 전력: {resultData.rating}
+            </p>
+
+            {renderColoredNotes(resultData.notes)}
           </div>
         )}
 
 
-        {/* 시뮬레이션 로그 */}
-        {transferLogs.length > 0 && (
+        {transferHistory.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-bold mb-3 text-gray-800">📜 영입/방출 시뮬레이션 로그</h3>
-
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {transferLogs.map((log) => {
-                const teamName = teams.find((t) => Number(t.team_id) === log.team_id)?.team_name ?? log.team_id;
-                const playerName = players.find((p) => Number(p.player_id) === log.player_in_id)?.player_name
-                  ?? log.player_in_id;
-
-                return (
-                  <div key={log.log_id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          [{log.type === "acquire" ? "영입" : "방출"}] {teamName} - {playerName}
-                        </div>
-
-                        <div className="text-xs text-gray-600 mt-1">
-                          승점 변화: {log.expected_points_change}
-                          / 새로운 팀 평점: {log.new_team_rating}
-                        </div>
+            <h3 className="text-lg font-bold mb-3 text-gray-800">
+              📜 영입/방출 히스토리
+            </h3>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {transferHistory.map((log) => (
+                <div
+                  key={log.id}
+                  className="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        [{log.type === "acquire" ? "영입" : "방출"}] {log.team} -{" "}
+                        {log.player}
                       </div>
-
+                      <div className="text-xs text-gray-600 mt-1">
+                        {log.summary}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end text-xs text-gray-400 ml-2 space-y-1">
+                      <div>{log.timestamp.toLocaleTimeString()}</div>
                       <button
-                        className="ml-3 px-2 py-1 rounded bg-red-100 text-[11px] font-semibold text-red-600 hover:bg-red-200 border border-red-200"
-                        onClick={() => handleDeleteLog(log.log_id)}
+                        className="px-2 py-1 rounded bg-red-100 text-[11px] font-semibold text-red-600 hover:bg-red-200 border border-red-200"
+                        onClick={() => handleDeleteLog(log.id)}
                       >
                         삭제
                       </button>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

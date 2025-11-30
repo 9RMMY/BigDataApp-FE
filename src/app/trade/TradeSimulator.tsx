@@ -116,13 +116,13 @@ export default function TradeSimulator() {
 
     fetchTeams();
   }, []);
+
   useEffect(() => {
     const fetchAllPlayers = async () => {
       try {
         const res = await fetch(`${API}/api/meta/players.php`, {
           headers: { "ngrok-skip-browser-warning": "69420" },
         });
-
         if (!res.ok) return;
 
         const data = await res.json();
@@ -212,7 +212,6 @@ export default function TradeSimulator() {
 
     setLoading(true);
 
-
     try {
       const res = await fetch(`${API}/api/simulations/trade.php`, {
         method: "POST",
@@ -234,6 +233,17 @@ export default function TradeSimulator() {
       if (!res.ok) throw new Error("API response not OK");
 
       const data = await res.json();
+
+      console.log("📌 RAW DELTA FROM SERVER:", data.delta);
+      Object.entries(data.delta as Record<string, {
+        attack: number;
+        defense: number;
+        rating: number;
+      }>).forEach(([teamId, stats]) => {
+        console.log(
+          `▶ 팀 ${teamId}: 공격력 ${stats.attack}, 수비력 ${stats.defense}, 평균 전력 ${stats.rating}`
+        );
+      });
       const deltaText = makeDeltaText(data.delta, teams);
 
       setResult({
@@ -290,9 +300,7 @@ export default function TradeSimulator() {
 
 
   useEffect(() => {
-    // teams 또는 allPlayers가 아직 없으면 실행하지 않음
     if (teams.length === 0 || allPlayers.length === 0) return;
-
     const fetchSimulationLogs = async () => {
       try {
         const res = await fetch(`${API}/api/simulations/log.php`, {
@@ -304,7 +312,6 @@ export default function TradeSimulator() {
         if (!res.ok) return;
 
         const data = (await res.json()) as SimulationLog[];
-
         const tradeLogs = data.filter(
           (log) =>
             log.type === "trade" &&
@@ -329,7 +336,7 @@ export default function TradeSimulator() {
     };
 
     fetchSimulationLogs();
-  }, [teams, allPlayers]); // ⬅ 여기 중요
+  }, [teams, allPlayers]); 
 
   // ===============================
   // 🔽 UI
