@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { loadTeamSession, getMyTeam, setMyTeam } from "../../utils/teamSession";
 
 export default function LineupBoard() {
   const [teamId, setTeamId] = useState("");
@@ -17,19 +18,77 @@ export default function LineupBoard() {
   const isReady = teamId && formation && opponent;
 
   const API = process.env.NEXT_PUBLIC_API_URL;
+  useEffect(() => {
+    const loadTeamsWithSession = async () => {
+      try {
+        const sessionData: any = loadTeamSession();
 
+        // ---------------------------
+        // 1) 세션이 있는 경우
+        // ---------------------------
+        if (sessionData) {
+          setTeams(sessionData.teams);
+
+          // ⭐ 여기! my_team_id가 없으면 fallback 값 세팅
+          const myTeam = sessionData.my_team_id
+            ? String(sessionData.my_team_id)
+            : sessionData.teams?.[0]?.team_id  // 첫 번째 팀으로 fallback
+              ? String(sessionData.teams[0].team_id)
+              : "9";
+
+          setTeamId(myTeam);
+          return;
+        }
+
+        // ---------------------------
+        // 2) 세션 없는 경우 서버에서 받아오기
+        // ---------------------------
+        const myTeamData: any = await getMyTeam(); // 반드시 { my_team_id } 포함해야 함
+
+        const fullTeamData: any = await setMyTeam(myTeamData.my_team_id);
+
+        setTeams(fullTeamData.teams);
+        setTeamId(String(fullTeamData.my_team_id));
+
+      } catch (err) {
+        console.log("🔥 세션/팀 로딩 오류", err);
+
+        // fallback: 기본 팀 목록만 가져오기
+        try {
+          const res = await fetch(`${API}/api/meta/teams.php`, {
+            headers: { "ngrok-skip-browser-warning": "69420" },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setTeams(data);
+
+            // fallback teamId 자동 설정
+            setTeamId(String(data[0]?.team_id ?? "9"));
+          }
+        } catch (e) {
+          console.log("🔥 fallback 실패", e);
+        }
+      }
+    };
+
+    loadTeamsWithSession();
+  }, [API]);
+
+
+  // -----------------------------
   // 팀명 매핑
+  // -----------------------------
   const teamName =
     teams.find((t) => String(t.team_id) === String(teamId))?.team_name ?? teamId;
 
   const opponentName =
-    teams.find((t) => String(t.team_id) === String(opponent))?.team_name ??
-    opponent;
+    teams.find((t) => String(t.team_id) === String(opponent))?.team_name ?? opponent;
 
-  // GK 고정위치 (왼쪽 중앙)
+  // -----------------------------
+  // 포지션 매핑
+  // -----------------------------
   const GK_POS = { top: "50%", left: "5%" };
 
-  // 포지션 배치
   const formationPositions: any = {
     "4-3-3": {
       DF: [
@@ -89,31 +148,14 @@ export default function LineupBoard() {
 
   const getPositionStyle = (pos: string, index: number) => {
     if (pos === "GK") return GK_POS;
-
     const map = formationPositions[formation];
     if (!map) return { top: "50%", left: "50%" };
     return map[pos]?.[index] ?? { top: "50%", left: "50%" };
   };
 
-  // 팀 목록 로드
-  useEffect(() => {
-    const fetchTeams = async () => {
-      try {
-        const res = await fetch(`${API}/api/meta/teams.php`, {
-          headers: { "ngrok-skip-browser-warning": "69420" },
-        });
-
-        if (!res.ok) return;
-
-        const data = await res.json();
-        setTeams(data);
-      } catch (e) {}
-    };
-
-    fetchTeams();
-  }, []);
-
+  // -----------------------------
   // 라인업 추천 API
+  // -----------------------------
   const handleRecommend = async () => {
     if (!isReady) return;
 
@@ -138,30 +180,33 @@ export default function LineupBoard() {
       if (!res.ok) throw new Error("API error");
 
       const data = await res.json();
-
       setFitScore(data.formation_fit);
       setLineup(data.recommended_lineup);
-    } catch (e) {}
+    } catch (e) {
+      console.log("🔥 라인업 추천 오류:", e);
+    }
 
     setLoading(false);
   };
 
   return (
     <div className="flex flex-col md:flex-row flex-1 bg-white overflow-x-hidden">
+
       {/* 왼쪽 사이드바 */}
-      <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start flex-shrink-0">
+      <div className="w-full md:w-60 bg-white shadow-md p-6 flex md:flex-col items-center md:items-start">
         <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-6 md:mb-10">
           LINE-UP<br />BOARD
         </h1>
       </div>
 
-      {/* 본문 */}
+      {/* 메인 */}
       <div className="flex-1 p-6 flex flex-col">
 
         {/* 선택 UI */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
-          
-          <select className="border p-1 rounded w-44"
+
+          <select
+            className="border p-1 rounded w-44"
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
           >
@@ -171,7 +216,8 @@ export default function LineupBoard() {
             ))}
           </select>
 
-          <select className="border p-1 rounded w-28"
+          <select
+            className="border p-1 rounded w-28"
             value={formation}
             onChange={(e) => setFormation(e.target.value)}
           >
@@ -181,7 +227,8 @@ export default function LineupBoard() {
             <option value="4-4-2">4-4-2</option>
           </select>
 
-          <select className="border p-1 rounded w-44"
+          <select
+            className="border p-1 rounded w-44"
             value={opponent}
             onChange={(e) => setOpponent(e.target.value)}
           >
@@ -192,31 +239,29 @@ export default function LineupBoard() {
           </select>
 
           <button
-            className={`px-3 py-1.5 rounded text-white ${
-              isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`px-3 py-1.5 rounded text-white ${isReady ? "bg-primary hover:bg-primary/80" : "bg-gray-400 cursor-not-allowed"
+              }`}
             onClick={handleRecommend}
             disabled={!isReady}
           >
             라인업 추천
           </button>
+
         </div>
 
-        {/* 축구장 (좌우 꽉 차게) */}
-        <div className="w-[1400px]">
-          <div
-            className="relative bg-green-600 w-full h-[360px] rounded shadow-md"
-          >
-            {/* 필드 라인 */}
+        {/* 축구장 */}
+        <div className="w-[800px]">
+          <div className="relative bg-green-600 w-full h-[360px] rounded shadow-md">
             {/* 하프라인 */}
             <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white"></div>
-            {/* 센터 서클 */}
+            {/* 센터서클 */}
             <div className="absolute top-1/2 left-1/2 w-24 h-24 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-            {/* 좌우 페널티 박스 (골대 라인) */}
+
+            {/* 페널티 박스 */}
             <div className="absolute left-0 top-1/2 w-12 h-24 border-2 border-white -translate-y-1/2"></div>
             <div className="absolute right-0 top-1/2 w-12 h-24 border-2 border-white -translate-y-1/2"></div>
 
-            {/* 선수 배치 */}
+            {/* 선수 표시 */}
             {!loading &&
               lineup.map((p, idx) => {
                 const index = lineup.filter((x) => x.position === p.position).indexOf(p);
@@ -239,15 +284,14 @@ export default function LineupBoard() {
           </div>
         </div>
 
-        {/* 라인업 목록 (축구장 아래, 한 줄 + 가로 스크롤) */}
-        <div className="mt-6 w-full max-w-[1400px] mx-auto">
-          <h2 className="font-semibold text-lg text-left">
+        {/* 라인업 리스트 */}
+        <div className="mt-6 w-full  mx-auto">
+          <h2 className="font-semibold text-lg">
             {teamName} (홈) vs {opponentName} (어웨이) 라인업 목록
           </h2>
 
-          {/* 전술 적합도: 헤더 바로 아래 */}
           {fitScore !== null && (
-            <p className="text-md mt-1 mb-3 text-left">
+            <p className="text-md mt-1 mb-3">
               전술 적합도:{" "}
               <span className={fitScore >= 0.5 ? "text-red-600" : "text-blue-600"}>
                 {(fitScore * 100).toFixed(0)}%
@@ -255,8 +299,7 @@ export default function LineupBoard() {
             </p>
           )}
 
-          {/* 라인업 한 줄, 섹션 안에서 좌우 스크롤 */}
-          <div className="w-full overflow-x-auto overflow-y-hidden pb-2">
+          <div className="w-full overflow-x-auto pb-2">
             <div className="flex flex-nowrap gap-4 min-w-max">
               {lineup.map((p, idx) => (
                 <div
@@ -266,7 +309,6 @@ export default function LineupBoard() {
                   <div className="font-bold mb-1">
                     {p.position} - {p.player}
                   </div>
-
                   <div className="text-green-600 font-semibold">
                     {(p.fit_score * 100).toFixed(0)}%
                   </div>
@@ -274,6 +316,7 @@ export default function LineupBoard() {
               ))}
             </div>
           </div>
+
         </div>
 
       </div>
