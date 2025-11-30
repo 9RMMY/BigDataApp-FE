@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { JEONBUK_ID } from "../constants/team";
-import { loadTeamSession } from "../../utils/teamSession";
+import { loadTeamSession, setMyTeam, getMyTeam } from "../../utils/teamSession";
 
 type Team = {
   team_id: string;
@@ -32,40 +32,51 @@ export default function PlayerManage() {
 
   useEffect(() => {
     const loadTeams = async () => {
-      // 먼저 localStorage에서 데이터 확인
-      const sessionData = loadTeamSession();
-      if (sessionData) {
-        setTeams(sessionData.teams);
-        setMyTeamId(sessionData.my_team_id);
-        return;
-      }
-
-      // 세션 데이터 없으면 API 호출
-      console.log("🏆 PlayerManage - 팀 목록 API 호출 시작");
       try {
-        setLoadingTeams(true);
-        const url = `${API}/api/meta/teams.php`;
-        console.log("🔍 팀 목록 요청 URL:", url);
+        // 먼저 localStorage에서 데이터 확인
+        const sessionData = loadTeamSession();
+        if (sessionData) {
+          setTeams(sessionData.teams);
+          setMyTeamId(sessionData.my_team_id);
+          return;
+        }
+
+        // localStorage에 없으면 새로운 API로 조회
+        const teamData = await getMyTeam();
+        const fullTeamData = await setMyTeam(teamData.my_team_id);
         
-        const res = await fetch(url, {
-          headers: {
-            "ngrok-skip-browser-warning": "69420",
-          },
-        });
-        console.log("📡 팀 목록 응답 status:", res.status);
-        
-        if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
-        
-        const data: Team[] = await res.json();
-        console.log("📋 팀 목록 응답 데이터:", data);
-        console.log("📊 팀 수:", data.length);
-        
-        setTeams(data);
+        setTeams(fullTeamData.teams);
+        setMyTeamId(teamData.my_team_id);
       } catch (err) {
-        console.error("🔥 팀 목록 불러오기 실패:", err);
-        setError((err as Error).message);
-      } finally {
-        setLoadingTeams(false);
+        console.error("🔥 팀 정보 불러오기 실패:", err);
+        
+        // fallback: 기존 API 호출
+        console.log("🏆 PlayerManage - 팀 목록 API 호출 시작");
+        try {
+          setLoadingTeams(true);
+          const url = `${API}/api/meta/teams.php`;
+          console.log("🔍 팀 목록 요청 URL:", url);
+          
+          const res = await fetch(url, {
+            headers: {
+              "ngrok-skip-browser-warning": "69420",
+            },
+          });
+          console.log("📡 팀 목록 응답 status:", res.status);
+          
+          if (!res.ok) throw new Error("팀 정보를 불러오지 못했습니다.");
+          
+          const data: Team[] = await res.json();
+          console.log("📋 팀 목록 응답 데이터:", data);
+          console.log("📊 팀 수:", data.length);
+          
+          setTeams(data);
+        } catch (err) {
+          console.error("🔥 팀 목록 불러오기 실패:", err);
+          setError((err as Error).message);
+        } finally {
+          setLoadingTeams(false);
+        }
       }
     };
 
