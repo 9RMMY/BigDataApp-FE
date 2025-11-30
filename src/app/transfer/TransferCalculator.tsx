@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { JEONBUK_ID, JEONBUK_NAME } from "../constants/team";
-import { loadTeamSession } from "../../utils/teamSession";
+import { loadTeamSession, setMyTeam, getMyTeam } from "../../utils/teamSession";
+
 
 type TransferLog = {
   log_id: number;
