@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { JEONBUK_ID, JEONBUK_NAME } from "../constants/team";
-import { loadTeamSession } from "../../utils/teamSession";
+import { loadTeamSession, setMyTeam, getMyTeam } from "../../utils/teamSession";
 
 type TransferLog = {
   log_id: number;
@@ -57,29 +57,45 @@ export default function TransferCalculator() {
   >([]);
   useEffect(() => {
     const loadTeams = async () => {
-      const sessionData = loadTeamSession();
-      if (sessionData) {
-        setTeams(sessionData.teams);
-        setTeam(sessionData.my_team_id);
-        return;
-      }
-
       try {
-        const res = await fetch(`${API}/api/meta/teams.php`, {
-          headers: {
-            "ngrok-skip-browser-warning": "69420",
-          },
-        });
-
-        if (!res.ok) {
-          console.log("❌ [TEAM API] res.ok = false");
+        // 먼저 localStorage에서 데이터 확인
+        const sessionData = loadTeamSession();
+        if (sessionData) {
+          setTeams(sessionData.teams);
           return;
         }
 
-        const data = await res.json();
-        setTeams(data);
-      } catch (e) {
-        console.log("🔥 [TEAM API] 오류 =", e);
+        // localStorage에 없으면 새로운 API로 조회
+        const teamData = await getMyTeam();
+        const fullTeamData = await setMyTeam(teamData.my_team_id);
+        
+        setTeams(fullTeamData.teams);
+      } catch (err) {
+        console.error("🔥 팀 정보 불러오기 실패:", err);
+        
+        // fallback: 기존 API 호출
+        console.log("🔵 [TEAM API] fallback 호출 시작");
+        console.log("🔧 API URL =", `${API}/api/meta/teams.php`);
+
+        try {
+          const res = await fetch(`${API}/api/meta/teams.php`,
+            {
+              headers: {
+                "ngrok-skip-browser-warning": "69420",
+              },
+          });
+
+          if (!res.ok) {
+            console.log("❌ [TEAM API] res.ok = false");
+            return;
+          }
+
+          const data = await res.json();
+
+          setTeams(data);
+        } catch (e) {
+          console.log("🔥 [TEAM API] 오류 =", e);
+        }
       }
     };
 
