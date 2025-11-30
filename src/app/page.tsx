@@ -139,7 +139,7 @@ export default function Home() {
         setTeams(data);
         
         // localStorage에 팀 정보 저장
-        saveTeamSession(data, String(JEONBUK_ID), JEONBUK_NAME);
+        saveTeamSession(data, String(JEONBUK_ID), JEONBUK_NAME, []);
       } catch (e) {
         console.error("🔥 팀 목록 불러오기 실패:", e);
         setTeamsError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다');
@@ -387,8 +387,10 @@ export default function Home() {
 
   // 팀 이름 변환
   const getTeamName = (teamId: string) => {
-    const team = teams.find(t => t.team_id === teamId);
-    return team?.team_name || teamId;
+    const team = teams.find(t => t.team_id.toString() === teamId);
+    const teamName = team?.team_name || teamId;
+    console.log(`🏷️ 팀 이름 변환: ${teamId} -> ${teamName}, teams.length: ${teams.length}`);
+    return teamName;
   };
 
   const getHomeTeamName = (match: MatchResult) =>
